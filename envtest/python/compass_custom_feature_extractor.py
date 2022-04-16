@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
 
 class CompassFE(BaseFeaturesExtractor):
@@ -13,24 +14,13 @@ class CompassFE(BaseFeaturesExtractor):
         This corresponds to the number of unit for the last layer.
     """
 
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
+    def __init__(self, observation_space: gym.spaces.Box, env: wrapper , features_dim: int = 5 ):
         super(CompassFE, self).__init__(observation_space, features_dim)
-        # We assume CxHxW images (channels first)
-        # Re-ordering will be done by pre-preprocessing or wrapper
         n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 1, kernel_size=8, stride=1, padding=10),
-            nn.ReLU(),
-            nn.Flatten(),
-        )
+        self.env = env
 
-        # Compute shape by doing one forward pass
-        with th.no_grad():
-            n_flatten = self.cnn(
-                th.as_tensor(observation_space.sample()[None]).float()
-            ).shape[1]
-
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        self.linear = nn.Sequential(nn.Linear(n_input_channels, features_dim), nn.ReLU())
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.linear(self.cnn(observations))
+        print(self.env._rgb_img_obs)
+        return self.linear(observations)

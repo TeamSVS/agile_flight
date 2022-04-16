@@ -122,26 +122,29 @@ def main():
     configure_random_seed(args.seed, env=train_env)
 
     if args.render:
-        cfg["simulation"]["num_envs"] = 1
-
         cfg["unity"]["render"] = "yes"
         cfg["rgb_camera"]["on"] = "yes"
-     #   os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 &")
+        os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 &")
 
     # create evaluation environment
     cfg["simulation"]["num_envs"] = 1
 
     #old_num_envs = cfg["simulation"]["num_envs"]
-    eval_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
-    )
+    #eval_env = wrapper.FlightEnvVec(
+     #   VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
+    #)
    # cfg["simulation"]["num_envs"] = old_num_envs
+
+    #configure_random_seed(args.seed, env=eval_env)
+    configure_random_seed(args.seed, env=train_env)
+
 
     # save the configuration and other files
     rsg_root = os.path.dirname(os.path.abspath(__file__))
     log_dir = rsg_root + "/saved"
     os.makedirs(log_dir, exist_ok=True)
 
+    train_env.connectUnity()
 
     if args.train:
 
@@ -163,14 +166,14 @@ def main():
                 tensorboard_log=log_dir,
                 policy="MlpPolicy",
                 policy_kwargs=dict(
-                    #features_extractor_class=CompassFE,
-                    #features_extractor_kwargs=dict(features_dim=128),
+                    features_extractor_class=CompassFE,
+                    features_extractor_kwargs=dict(features_dim=5,env = train_env),
     #                activation_fn=torch.nn.ReLU,
                     net_arch=[256, dict(pi=[256, 256], vf=[512, 512])],
                     log_std_init=-0.5,
                 ),
                 env=train_env,
-                eval_env=eval_env,
+                 #eval_env=eval_env,
                 use_tanh_act=True,
                 gae_lambda=0.95,
                 gamma=0.99,
@@ -221,7 +224,7 @@ def main():
         policy.load_state_dict(saved_variables["state_dict"], strict=False)
         policy.to(device)
         # 
-        eval_env.load_rms(env_rms)
+        #eval_env.load_rms(env_rms)
         test_policy(eval_env, policy, render=args.render)
 
 
