@@ -22,5 +22,6 @@ class CompassFE(BaseFeaturesExtractor):
         self.linear = nn.Sequential(nn.Linear(n_input_channels, features_dim), nn.ReLU())
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        print(self.env._rgb_img_obs)
+        x = self.env._rgb_img_obs
+        print(x)
         return self.linear(observations)
