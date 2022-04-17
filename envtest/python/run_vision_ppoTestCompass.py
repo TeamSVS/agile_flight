@@ -43,6 +43,12 @@ def parser():
     parser.add_argument("--iter", type=int, default=100, help="PPO iter number")
     return parser
 
+def renderBig(env):
+    time.sleep(5)
+    while True:
+        env.render(0)
+        time.sleep(0.01)
+
 
 def main():
     args = parser().parse_args()
@@ -53,6 +59,7 @@ def main():
     train_env = wrapper.FlightEnvVec(train_env)
 
     # set random seed
+    #MI mancava questo riga ecco perche non parteva
     configure_random_seed(args.seed, env=train_env)
 
     os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 &")
@@ -62,6 +69,18 @@ def main():
     rsg_root = os.path.dirname(os.path.abspath(__file__))
     log_dir = rsg_root + "/saved"
     os.makedirs(log_dir, exist_ok=True)
+
+    cfg["unity"]["render"] = "no"
+    cfg["rgb_camera"]["on"] = "yes"
+    cfg["simulation"]["num_envs"] = 1
+    
+     # create evaluation environment
+    #old_num_envs = cfg["simulation"]["num_envs"]
+    #cfg["simulation"]["num_envs"] = 1
+    eval_env = wrapper.FlightEnvVec(
+        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
+    )
+    #cfg["simulation"]["num_envs"] = old_num_envs
 
     """
     for i in range(1):
@@ -88,13 +107,13 @@ def main():
         policy="MlpPolicy",
         policy_kwargs=dict(
             features_extractor_class=CompassFE,
-            features_extractor_kwargs=dict(features_dim=5, env=train_env),
+            features_extractor_kwargs=dict(features_dim=55, env=train_env),
             #                activation_fn=torch.nn.ReLU,
             net_arch=[dict(pi=[256, 256], vf=[512, 512])],
             log_std_init=-0.5,
         ),
         env=train_env,
-        # eval_env=eval_env,
+        eval_env=eval_env,
         use_tanh_act=True,
         gae_lambda=0.95,
         gamma=0.99,
@@ -102,14 +121,16 @@ def main():
         ent_coef=0.0,
         vf_coef=0.5,
         max_grad_norm=0.5,
-        batch_size=25000,
+        batch_size=train_env.num_envs * 250,
         clip_range=0.2,
         use_sde=False,  # don't use (gSDE), doesn't work
         env_cfg=cfg,
         verbose=1,
     )
+    #Thread(target=renderBig, args=[train_env]).start()
     model.learn(total_timesteps=int(5 * 1e7), log_interval=(10, 50))
     print("ENDED!!!")
 
 if __name__ == "__main__":
     main()
+
