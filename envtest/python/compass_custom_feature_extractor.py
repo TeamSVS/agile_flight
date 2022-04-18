@@ -5,7 +5,6 @@ import random
 from stable_baselines3 import PPO
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from rpg_baselines.torch.envs import vec_env_wrapper as wrapper
-from dronenavigation import main_velocity as compassNet
 
 class CompassFE(BaseFeaturesExtractor):
     """

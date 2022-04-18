@@ -19,6 +19,7 @@ from rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 from rpg_baselines.torch.common.util import test_policy
 from compass_custom_feature_extractor import CompassFE
 from threading import Thread
+from dronenavigation.models.compass.compass_model import CompassModel
 
 cfg = YAML().load(
     open(
@@ -104,12 +105,13 @@ def main():
         train_env.reset(True)
     time.sleep(0.2)
     """
+    a=CompassModel()
     model = PPO(
         tensorboard_log=log_dir,
         policy="MlpPolicy",
         policy_kwargs=dict(
-            features_extractor_class=CompassFE,
-            features_extractor_kwargs=dict(features_dim=55, env=train_env),
+            features_extractor_class=CompassModel,
+            features_extractor_kwargs=dict(features_dim=5, env=train_env),
             #                activation_fn=torch.nn.ReLU,
             net_arch=[dict(pi=[256, 256], vf=[512, 512])],
             log_std_init=-0.5,
