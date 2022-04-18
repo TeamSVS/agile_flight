@@ -1,7 +1,8 @@
 [submodule "flightmare"]
-	path = flightmare
-	url = git@github.com:TeamSVS/flightmare.git
-	branch = develop
+	[submodule "flightmare"]
+        path = flightmare
+        url = git@github.com:TeamSVS/flightmare.git
+        branch = develop
 [submodule "catkin_simple"]
 	path = catkin_simple
 	url = https://github.com/catkin/catkin_simple
@@ -10,5 +11,5 @@
 	url = https://github.com/ethz-asl/mav_comm
 [submodule "dodgedrone_simulation"]
 	path = dodgedrone_simulation
-	url = git@github.com:uzh-rpg/dodgedrone_simulation.git
+	url = https://github.com/uzh-rpg/dodgedrone_simulation.git
 	branch = main

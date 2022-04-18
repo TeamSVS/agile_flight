@@ -25,6 +25,10 @@ else
   ROS_PID=""
 fi
 
+cd ./envtest/ros
+python3 run_competition.py --vision_based &
+cd -
+
 SUMMARY_FILE="evaluation.yaml"
 "" > $SUMMARY_FILE
 
@@ -35,6 +39,7 @@ do
   rostopic pub /kingfisher/dodgeros_pilot/off std_msgs/Empty "{}" --once
   rostopic pub /kingfisher/dodgeros_pilot/reset_sim std_msgs/Empty "{}" --once
   rostopic pub /kingfisher/dodgeros_pilot/enable std_msgs/Bool "data: true" --once
+  rostopic pub /kingfisher/dodgeros_pilot/start std_msgs/Empty "{}" --once
 
   export ROLLOUT_NAME="rollout_""$i"
   echo "$ROLLOUT_NAME"
