@@ -52,12 +52,7 @@ def renderBig(env):
 
 def main():
     args = parser().parse_args()
-    print(torch.cuda.is_available())
-    print(torch.cuda.device_count())
-    print(torch.cuda.current_device())
-    print(torch.version.cuda)
-    torch.cuda.set_device(0)
-    print(torch.cuda.current_device())
+
 
 
     cfg["unity"]["render"] = "yes"
