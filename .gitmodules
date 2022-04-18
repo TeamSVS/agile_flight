@@ -1,6 +1,8 @@
 [submodule "flightmare"]
-	path = flightmare
-	url = https://github.com/MichaelBosello/flightmare
+	[submodule "flightmare"]
+        path = flightmare
+        url = git@github.com:TeamSVS/flightmare.git
+        branch = develop
 [submodule "catkin_simple"]
 	path = catkin_simple
 	url = https://github.com/catkin/catkin_simple
