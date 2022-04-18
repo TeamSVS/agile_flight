@@ -97,6 +97,7 @@ def main():
 
         #
         model.learn(total_timesteps=int(5 * 1e7), log_interval=(10, 50))
+        eval_env.step()
     else:
         os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 &")
         #

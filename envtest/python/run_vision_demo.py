@@ -111,6 +111,7 @@ def main():
       # wait for the purpose of using open cv visualization
       cv2.waitKey(500)
 
+    print(env.getImage())
     #
     if args.render:
         env.disconnectUnity()
