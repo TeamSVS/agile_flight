@@ -53,8 +53,9 @@ class CompassModel(BaseFeaturesExtractor):
 
 
         # x: B, C, SL, H, W
-        # x = x.unsqueeze(2)           # Shape: [B,C,H,W] -> [B,C,1,H,W].
-        x = torch.reshape(x, (32, 3, 224, 224))
+        x = torch.reshape(x, (32 ,3, 224, 224))
+
+        x = x.unsqueeze(2)           # Shape: [B,C,H,W] -> [B,C,1,H,W].
         x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
 
         if self.linear_prob:
@@ -67,4 +68,6 @@ class CompassModel(BaseFeaturesExtractor):
             x = x.view(B * T, N, H, W)
             x = self.pred(x)
             x = x.mean(dim=(1, 2, 3))
+
+        print("x")
         return x

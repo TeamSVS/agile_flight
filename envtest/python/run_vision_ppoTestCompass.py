@@ -112,9 +112,9 @@ def main():
             features_extractor_class=CompassModel,
             features_extractor_kwargs=dict(linear_prob=True, pretrained_encoder_path="/home/cam/Desktop/compass"
                                                                                      "/Modello/new-checkpoint.pth"
-                                                                                     ".tar", feature_size=5),
+                                                                                     ".tar", feature_size=4),
             #                activation_fn=torch.nn.ReLU,
-            net_arch=[dict(pi=[256, 256], vf=[512, 512])],
+            net_arch=[4,dict(pi=[256, 256], vf=[512, 512])],
             log_std_init=-0.5,
         ),
         env=train_env,
