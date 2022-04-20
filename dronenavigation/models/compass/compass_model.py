@@ -6,6 +6,14 @@ import math
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 
+def _initialize_weights(module):
+    for name, param in module.named_parameters():
+        if 'bias' in name:
+            nn.init.constant_(param, 0.0)
+        elif 'weight' in name:
+            nn.init.orthogonal_(param, 0.1)
+
+
 class CompassModel(BaseFeaturesExtractor):
     def __init__(self, observation_space, linear_prob, pretrained_encoder_path, feature_size):
         super(CompassModel, self).__init__(observation_space, feature_size)
@@ -16,22 +24,15 @@ class CompassModel(BaseFeaturesExtractor):
 
         if self.linear_prob:
             self.pred = nn.Sequential(
-                nn.Linear(param['feature_size'], 128),
-                nn.ReLU(inplace=True),
-                nn.Linear(128, 4)
+                    nn.Linear(param['feature_size'], 128),
+                    nn.ReLU(inplace=True),
+                    nn.Linear(128, 4)
             )
         else:
             self.pred = nn.Conv2d(param['feature_size'], param['feature_size'], kernel_size=1, padding=0)
 
-        self._initialize_weights(self.pred)
+        _initialize_weights(self.pred)
         self.load_pretrained_encoder_weights(self.pretrained_encoder_path)
-
-    def _initialize_weights(self, module):
-        for name, param in module.named_parameters():
-            if 'bias' in name:
-                nn.init.constant_(param, 0.0)
-            elif 'weight' in name:
-                nn.init.orthogonal_(param, 0.1)
 
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
@@ -49,13 +50,9 @@ class CompassModel(BaseFeaturesExtractor):
 
     def forward(self, x):
 
-
-
-
         # x: B, C, SL, H, W
 
-
-        x = x.unsqueeze(2)           # Shape: [B,C,H,W] -> [B,C,1,H,W].
+        x = x.unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
         x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
 
         if self.linear_prob:

@@ -22,9 +22,9 @@ from threading import Thread
 from dronenavigation.models.compass.compass_model import CompassModel
 
 cfg = YAML().load(
-    open(
-        os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
-    )
+        open(
+                os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
+        )
 )
 
 
@@ -80,7 +80,7 @@ def main():
     # old_num_envs = cfg["simulation"]["num_envs"]
     # cfg["simulation"]["num_envs"] = 1
     eval_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
+            VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
     )
     # cfg["simulation"]["num_envs"] = old_num_envs
 
@@ -106,34 +106,34 @@ def main():
     """
 
     model = PPO(
-        tensorboard_log=log_dir,
-        policy="MlpPolicy",
-        policy_kwargs=dict(
-            features_extractor_class=CompassModel,
-            features_extractor_kwargs=dict(linear_prob=True, pretrained_encoder_path="/home/cam/Desktop/compass"
-                                                                                     "/Modello/new-checkpoint.pth"
-                                                                                     ".tar", feature_size=4),
-            #                activation_fn=torch.nn.ReLU,
-            net_arch=[4,dict(pi=[256, 256], vf=[512, 512])],
-            log_std_init=-0.5,
-        ),
-        env=train_env,
-        eval_env=eval_env,
-        use_tanh_act=True,
-        gae_lambda=0.95,
-        gamma=0.99,
-        n_steps=250,
-        ent_coef=0.0,
-        vf_coef=0.5,
-        max_grad_norm=0.5,
-        batch_size=train_env.num_envs * 250,
-        clip_range=0.2,
-        use_sde=False,  # don't use (gSDE), doesn't work
-        env_cfg=cfg,
-        verbose=1,
+            tensorboard_log=log_dir,
+            policy="MlpPolicy",
+            policy_kwargs=dict(
+                    features_extractor_class=CompassModel,
+                    features_extractor_kwargs=dict(linear_prob=True,
+                                                   pretrained_encoder_path=os.environ["COMPASS_CKPT"],
+                                                   feature_size=4),
+                    #                activation_fn=torch.nn.ReLU,
+                    net_arch=[4, dict(pi=[256, 256], vf=[512, 512])],
+                    log_std_init=-0.5,
+            ),
+            env=train_env,
+            eval_env=eval_env,
+            use_tanh_act=True,
+            gae_lambda=0.95,
+            gamma=0.99,
+            n_steps=250,
+            ent_coef=0.0,
+            vf_coef=0.5,
+            max_grad_norm=0.5,
+            batch_size=train_env.num_envs * 250,
+            clip_range=0.2,
+            use_sde=False,  # don't use (gSDE), doesn't work
+            env_cfg=cfg,
+            verbose=1,
     )
     # Thread(target=renderBig, args=[train_env]).start()
-    model.learn(total_timesteps=int(5 * 1e7), log_interval=(10, 50))
+    model.learn(total_timesteps=int(5 * 1e7), log_interval=50)
     print("ENDED!!!")
 
 
