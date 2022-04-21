@@ -35,7 +35,7 @@ class CompassModel(BaseFeaturesExtractor):
 
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
-            ckpt = torch.load(pretrained_path)['state_dict']  # COMPASS checkpoint format.
+            ckpt = torch.load(pretrained_path,map_location=torch.device('cpu'))['state_dict']  # COMPASS checkpoint format.
             ckpt2 = {}
             for key in ckpt:
                 if key.startswith('backbone_rgb'):
@@ -57,8 +57,11 @@ class CompassModel(BaseFeaturesExtractor):
 
         x = x.unsqueeze(2)           # Shape: [B,C,H,W] -> [B,C,1,H,W].
         x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
-
-        if self.linear_prob:
+        B, N, T, H, W = x.shape
+        x = x.mean(dim=(2, 3,4))
+        #x=torch.flatten(x,3,4)
+        #x = torch.flatten(x, 0,2)
+        """if self.linear_prob:
             x = x.mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
             x = self.pred(x)  # Shape: [B,C'] -> [B,C''].
 
@@ -68,6 +71,6 @@ class CompassModel(BaseFeaturesExtractor):
             x = x.view(B * T, N, H, W)
             x = self.pred(x)
             x = x.mean(dim=(1, 2, 3))
-
+        """
         print("x")
         return x

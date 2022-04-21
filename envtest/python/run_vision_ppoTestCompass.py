@@ -104,17 +104,15 @@ def main():
         train_env.reset(True)
     time.sleep(0.2)
     """
-
+    path="/home/giuseppe/icra22_competition_ws/src/agile_flight/dronenavigation/data/drone_datasets/epoch1.pth.tar"
     model = PPO(
         tensorboard_log=log_dir,
         policy="MlpPolicy",
         policy_kwargs=dict(
             features_extractor_class=CompassModel,
-            features_extractor_kwargs=dict(linear_prob=True, pretrained_encoder_path="/home/cam/Desktop/compass"
-                                                                                     "/Modello/new-checkpoint.pth"
-                                                                                     ".tar", feature_size=4),
+            features_extractor_kwargs=dict(linear_prob=False, pretrained_encoder_path=path, feature_size=256),
             #                activation_fn=torch.nn.ReLU,
-            net_arch=[4,dict(pi=[256, 256], vf=[512, 512])],
+            net_arch=[256,dict(pi=[256, 256], vf=[512, 512])],
             log_std_init=-0.5,
         ),
         env=train_env,
@@ -133,6 +131,7 @@ def main():
         verbose=1,
     )
     # Thread(target=renderBig, args=[train_env]).start()
+
     model.learn(total_timesteps=int(5 * 1e7), log_interval=(10, 50))
     print("ENDED!!!")
 
