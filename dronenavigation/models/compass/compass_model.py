@@ -12,9 +12,9 @@ class CompassModel(BaseFeaturesExtractor):
         self.pretrained_encoder_path = pretrained_encoder_path
         self.linear_prob = linear_prob
         from .select_backbone import select_resnet
-        self.encoder, _, _, _, param = select_resnet('resnet18')
+        self.encoder, self.modelDepth, _, _, param = select_resnet('resnet18')
 
-        if self.linear_prob:
+        """if self.linear_prob:
             self.pred = nn.Sequential(
                 nn.Linear(param['feature_size'], 128),
                 nn.ReLU(inplace=True),
@@ -22,8 +22,9 @@ class CompassModel(BaseFeaturesExtractor):
             )
         else:
             self.pred = nn.Conv2d(param['feature_size'], param['feature_size'], kernel_size=1, padding=0)
-
+        
         self._initialize_weights(self.pred)
+        """
         self.load_pretrained_encoder_weights(self.pretrained_encoder_path)
 
     def _initialize_weights(self, module):
@@ -36,32 +37,33 @@ class CompassModel(BaseFeaturesExtractor):
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
             ckpt = torch.load(pretrained_path,map_location=torch.device('cpu'))['state_dict']  # COMPASS checkpoint format.
-            ckpt2 = {}
+            ckptRgbImage = {}
+            ckptDepthImage = {}
             for key in ckpt:
                 if key.startswith('backbone_rgb'):
-                    ckpt2[key.replace('backbone_rgb.', '')] = ckpt[key]
+                    ckptRgbImage[key.replace('backbone_rgb.', '')] = ckpt[key]
                 elif key.startswith('module.backbone'):
-                    ckpt2[key.replace('module.backbone.', '')] = ckpt[key]
-            self.encoder.load_state_dict(ckpt2)
+                    ckptRgbImage[key.replace('module.backbone.', '')] = ckpt[key]
+                    ckptDepthImage[key.replace('module.backbone.', '')] = ckpt[key]
+                elif key.startswith('backbone_depth'):
+                    ckptDepthImage[key.replace('backbone_depth.', '')] = ckpt[key]
+            self.encoder.load_state_dict(ckptRgbImage)
+            self.modelDepth.load_state_dict(ckptDepthImage)
             print('Successfully loaded pretrained checkpoint: {}.'.format(pretrained_path))
         else:
             print('Train from scratch.')
 
     def forward(self, x):
 
-
-
-
         # x: B, C, SL, H, W
-        x = torch.reshape(x, (32 ,3, 224, 224))
-
         x = x.unsqueeze(2)           # Shape: [B,C,H,W] -> [B,C,1,H,W].
         x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
-        B, N, T, H, W = x.shape
-        x = x.mean(dim=(2, 3,4))
-        #x=torch.flatten(x,3,4)
-        #x = torch.flatten(x, 0,2)
-        """if self.linear_prob:
+        #B, N, T, H, W = x.shape
+        x = x.mean(dim=(2, 3,4))  # shape [B ,F]
+        #  x=torch.flatten(x,3,4) re-group of more dim into one
+        #  x = torch.flatten(x, 0,2)
+        """
+        if self.linear_prob:
             x = x.mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
             x = self.pred(x)  # Shape: [B,C'] -> [B,C''].
 
