@@ -50,24 +50,8 @@ class CompassModel(BaseFeaturesExtractor):
         x = x.unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
 
         x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
-        """
-        if self.linear_prob:
-            x = x.mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
-            x = self.pred(x)  # Shape: [B,C'] -> [B,C''].
 
-        else:
-            B, N, T, H, W = x.shape
-            x = x.view(B, T, N, H, W)
-            x = x.view(B * T, N, H, W)
-            x = self.pred(x)
-            x = x.mean(dim=(1, 2, 3))
-
-        # old x shape (2,4)
-        #              b,f
-        # new x shape (2,256,1,7,7)
-        #              b,c'  ,1,h',w'
-        """
-
+        print("_")
         # x = torch.randint(20, size=(2, 256), device=0) / 20
         x = x.mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
         return x
