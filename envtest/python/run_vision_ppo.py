@@ -84,11 +84,11 @@ def main():
             use_tanh_act=True,
             gae_lambda=0.95,
             gamma=0.99,
-            n_steps=250,
+            n_steps=25,
             ent_coef=0.0,
             vf_coef=0.5,
             max_grad_norm=0.5,
-            batch_size=25000,
+            batch_size=100,
             clip_range=0.2,
             use_sde=False,  # don't use (gSDE), doesn't work
             env_cfg=cfg,

@@ -110,9 +110,10 @@ def main():
         policy="MlpPolicy",
         policy_kwargs=dict(
             features_extractor_class=CompassModel,
-            features_extractor_kwargs=dict(linear_prob=False, pretrained_encoder_path=path, feature_size=256),
+            features_extractor_kwargs=dict(linear_prob=False,
+                                           pretrained_encoder_path=path, feature_size=512),
             #                activation_fn=torch.nn.ReLU,
-            net_arch=[256,dict(pi=[256, 256], vf=[512, 512])],
+            net_arch=[512,dict(pi=[256, 256], vf=[512, 512])],
             log_std_init=-0.5,
         ),
         env=train_env,

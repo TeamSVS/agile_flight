@@ -36,7 +36,8 @@ class CompassModel(BaseFeaturesExtractor):
 
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
-            ckpt = torch.load(pretrained_path,map_location=torch.device('cpu'))['state_dict']  # COMPASS checkpoint format.
+            ckpt = torch.load(pretrained_path, map_location=torch.device('cpu'))[
+                'state_dict']  # COMPASS checkpoint format.
             ckptRgbImage = {}
             ckptDepthImage = {}
             for key in ckpt:
@@ -53,15 +54,29 @@ class CompassModel(BaseFeaturesExtractor):
         else:
             print('Train from scratch.')
 
-    def forward(self, x):
+    def forward(self, inputImage):
+        if inputImage.ndim == 3:
+            inputImage = inputImage.unsqueeze(0)
+        B, C, H, W = inputImage.shape
 
-        # x: B, C, SL, H, W
-        x = x.unsqueeze(2)           # Shape: [B,C,H,W] -> [B,C,1,H,W].
-        x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
-        #B, N, T, H, W = x.shape
-        x = x.mean(dim=(2, 3,4))  # shape [B ,F]
-        #  x=torch.flatten(x,3,4) re-group of more dim into one
-        #  x = torch.flatten(x, 0,2)
+        # Shape: [B,C,H,W] -> [B,C,1,H,W].
+        inputImage = inputImage.unsqueeze(2)
+        inputImage = torch.reshape(inputImage, (C, B, 1, H, W))
+
+        rgbImg, depthImg = torch.split(inputImage, [3, 1], 0)
+        #  depthImg, rgbImg: C, B, SL, H, W
+
+        rgbImg = torch.reshape(rgbImg, (B, 3, 1, H, W))
+        depthImg = torch.reshape(depthImg, (B, 1, 1, H, W))
+        #  depthImg, rgbImg: B, C, SL, H, W
+
+
+        rgbImg = self.encoder(rgbImg)
+        depthImg = self.modelDepth(depthImg)
+        # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
+
+        rgbImg = rgbImg.mean(dim=(2, 3, 4))  # shape [B ,F]
+        depthImg = depthImg.mean(dim=(2, 3, 4))
         """
         if self.linear_prob:
             x = x.mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
@@ -75,4 +90,4 @@ class CompassModel(BaseFeaturesExtractor):
             x = x.mean(dim=(1, 2, 3))
         """
         print("x")
-        return x
+        return torch.cat((rgbImg, depthImg), 1)
