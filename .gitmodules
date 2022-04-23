@@ -2,7 +2,7 @@
 	[submodule "flightmare"]
         path = flightmare
         url = git@github.com:TeamSVS/flightmare.git
-        branch = develop
+        branch = rgbdepcompass
 [submodule "catkin_simple"]
 	path = catkin_simple
 	url = https://github.com/catkin/catkin_simple
