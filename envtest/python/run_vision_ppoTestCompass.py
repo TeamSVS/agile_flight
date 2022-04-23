@@ -15,11 +15,12 @@ from stable_baselines3.common.utils import get_device
 from stable_baselines3.ppo.policies import MlpPolicy
 
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
-from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
+from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper1 as wrapper
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
 from compass_custom_feature_extractor import SimpleCNNFE
 from threading import Thread
 from dronenavigation.models.compass.compass_model import CompassModel
+from customCallback import CustomCallback
 
 cfg = YAML().load(
         open(
@@ -51,9 +52,9 @@ def main():
 
     cfg["unity"]["render"] = "yes"
     cfg["rgb_camera"]["on"] = "yes"
-    train_env = VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
-    train_env = wrapper.FlightEnvVec(train_env)
-
+    train_env = wrapper.FlightEnvVec(
+            VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
+    )
     # set random seed
     # MI mancava questo riga ecco perche non parteva
     configure_random_seed(args.seed, env=train_env)
@@ -73,11 +74,14 @@ def main():
     # create evaluation environment
     # old_num_envs = cfg["simulation"]["num_envs"]
     # cfg["simulation"]["num_envs"] = 1
-    # eval_env = wrapper.FlightEnvVec(
-    #        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
-    # )
+    eval_env = wrapper.FlightEnvVec(
+            VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
+    )
+
+    configure_random_seed(args.seed, env=eval_env)
     # cfg["simulation"]["num_envs"] = old_num_envs
 
+    custom_callback = CustomCallback(train_env)
     """
     for i in range(1):
         obs_dim = train_env.obs_dim
@@ -107,29 +111,30 @@ def main():
                     features_extractor_kwargs=dict(linear_prob=True,
                                                    pretrained_encoder_path=os.environ["COMPASS_CKPT"],
                                                    feature_size=256),
-                    #                    features_extractor_class=SimpleCNNFE,
-                    #                    features_extractor_kwargs=dict(
-                    #                            features_dim=4),
+                    # features_extractor_class=SimpleCNNFE,
+                    # features_extractor_kwargs=dict(
+                    #        features_dim=256),
                     activation_fn=torch.nn.ReLU,
-                    net_arch=[256, dict(pi=[256, 256], vf=[512, 512])],
+                    net_arch=[256, dict(pi=[128, 128], vf=[256, 256])],
                     log_std_init=-0.5,
             ),
             env=train_env,
-            # eval_env=eval_env,
+            eval_env=eval_env,
             use_tanh_act=True,
             gae_lambda=0.95,
             gamma=0.99,
-            n_steps=250,
-            ent_coef=0.0,
+            n_steps=100,
+            ent_coef=0.002,
             vf_coef=0.5,
             max_grad_norm=0.5,
-            batch_size=train_env.num_envs,
+            batch_size=100,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
             clip_range=0.2,
-            use_sde=False,  # don't use (gSDE), doesn't work
+            use_sde=False,
             env_cfg=cfg,
             verbose=1,
     )
-    model.learn(total_timesteps=int(5 * 1e7), log_interval=(1, 5))
+    model.learn(total_timesteps=int(5 * 1e7), log_interval=(1, 5), callback=custom_callback)
+
     print("ENDED!!!")
 
 
