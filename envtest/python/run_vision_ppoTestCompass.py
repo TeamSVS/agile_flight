@@ -15,7 +15,7 @@ from stable_baselines3.common.utils import get_device
 from stable_baselines3.ppo.policies import MlpPolicy
 
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
-from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper1 as wrapper
+from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
 from compass_custom_feature_extractor import SimpleCNNFE
 from threading import Thread
@@ -82,26 +82,6 @@ def main():
     # cfg["simulation"]["num_envs"] = old_num_envs
 
     custom_callback = CustomCallback(train_env)
-    """
-    for i in range(1):
-        obs_dim = train_env.obs_dim
-    act_dim = train_env.act_dim
-    num_env = train_env.num_envs
-
-    # generate dummy action [-1, 1]
-    train_env.reset()
-    dummy_actions = np.random.rand(num_env, act_dim) * 2 - np.ones(shape=(num_env, act_dim))
-
-    z = train_env.getObs()
-    x = train_env.step(dummy_actions)
-    y = train_env.getObs()
-    h = train_env.getImage()
-    print(h)
-    train_env.render(i)
-    if i == 10:
-        train_env.reset(True)
-    time.sleep(0.2)
-    """
 
     model = PPO(
             tensorboard_log=log_dir,
@@ -135,7 +115,7 @@ def main():
     )
     model.learn(total_timesteps=int(5 * 1e7), log_interval=(1, 5), callback=custom_callback)
 
-    print("ENDED!!!")
+    print("Train ended!!!")
 
 
 if __name__ == "__main__":
