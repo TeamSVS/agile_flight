@@ -37,3 +37,5 @@ COMPASS
 data
 dronenavigation/*
 !dronenavigation/models
+.idea2
+

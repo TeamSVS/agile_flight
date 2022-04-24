@@ -1,3 +1,7 @@
+import threading
+import time
+from threading import Thread
+
 from stable_baselines3.common.callbacks import BaseCallback
 
 
@@ -11,6 +15,10 @@ class CustomCallback(BaseCallback):
     def __init__(self, env, verbose=0):
         super(CustomCallback, self).__init__(verbose)
         self.env = env
+        self.t = Thread(target=self.thread_renderer)
+        self.sleepEvent = threading.Event()
+        self.t.start()
+        self.blocked = False
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
         # The RL model
@@ -29,13 +37,26 @@ class CustomCallback(BaseCallback):
         # # to have access to the parent object
         # self.parent = None  # type: Optional[BaseCallback]
 
+    def thread_renderer(self):
+        self.sleepEvent.wait()
+        while True:
+
+            print("\t++")
+            self.env.render(1)
+            time.sleep(4)
+            while self.blocked:
+                self.sleepEvent.wait()
+
     def _on_training_start(self) -> None:
+
         """
         This method is called before the first rollout starts.
         """
         pass
 
     def _on_rollout_start(self) -> None:
+        print("\t Fine")
+        self.blocked = True
         """
         A rollout is the collection of environment interaction
         using the current policy.
@@ -56,12 +77,17 @@ class CustomCallback(BaseCallback):
         return True
 
     def _on_rollout_end(self) -> None:
+        print("\t Inizio")
+        self.blocked = False
+        self.sleepEvent.set()
         """
         This event is triggered before updating the policy.
         """
         pass
 
     def _on_training_end(self) -> None:
+        print("\t Fine2")
+        self.blocked = True
         """
         This event is triggered before exiting the `learn()` method.
         """
