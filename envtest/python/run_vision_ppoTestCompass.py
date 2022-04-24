@@ -151,7 +151,8 @@ def main():
     checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
                                              name_prefix='ppo_model')
 
-    model.learn(total_timesteps=int(5 * 1e7), log_interval=5, callback=custom_callback)
+    model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
+                callback=[eval_callback, checkpoint_callback, custom_callback])
 
     print("Train ended!!!")
 
