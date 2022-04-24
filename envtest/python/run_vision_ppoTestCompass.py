@@ -19,12 +19,21 @@ from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrappe
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
 from compass_custom_feature_extractor import SimpleCNNFE
 from threading import Thread
+from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from dronenavigation.models.compass.compass_model import CompassModel
+from customCallback import CustomCallback
+from threading import Thread
 
 cfg = YAML().load(
-        open(
-                os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
-        )
+    open(
+        os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
+    )
+)
+
+cfg2 = YAML().load(
+    open(
+        os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
+    )
 )
 
 
@@ -47,29 +56,28 @@ def parser():
 
 def main():
     args = parser().parse_args()
+
     print(torch.cuda.is_available())
     print(torch.cuda.device_count())
     print(torch.cuda.current_device())
     print(torch.version.cuda)
     torch.cuda.set_device(0)
     print(torch.cuda.current_device())
-
-    cfg["simulation"]["num_envs"] = 2
     from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 
+    cfg["simulation"]["num_envs"] = 2
     cfg["unity"]["render"] = "yes"
     cfg["rgb_camera"]["on"] = "yes"
     cfg["unity"]["input_port"] = 10253
     cfg["unity"]["output_port"] = 10254
-    train_env = VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
-    train_env = wrapper.FlightEnvVec(train_env)
 
-    # set random seed
-    # MI mancava questo riga ecco perche non parteva
+    train_env = wrapper.FlightEnvVec(
+        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
+
     configure_random_seed(args.seed, env=train_env)
     os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
     train_env.connectUnity()
-    # save the configuration and other files
+
     rsg_root = os.path.dirname(os.path.abspath(__file__))
     log_dir = rsg_root + "/saved"
     os.makedirs(log_dir, exist_ok=True)
@@ -79,15 +87,19 @@ def main():
     cfg["simulation"]["num_envs"] = 1
     cfg["unity"]["input_port"] = 10255
     cfg["unity"]["output_port"] = 10256
-    
+
      # create evaluation environment
     #old_num_envs = cfg["simulation"]["num_envs"]
     #cfg["simulation"]["num_envs"] = 1
     eval_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
-    )
-    #cfg["simulation"]["num_envs"] = old_num_envs
+        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
 
+    configure_random_seed(args.seed, env=eval_env)
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 &")
+    eval_env.connectUnity()
+
+
+    #cfg["simulation"]["num_envs"] = old_num_envs
     # create evaluation environment
     # old_num_envs = cfg["simulation"]["num_envs"]
     # cfg["simulation"]["num_envs"] = 1
@@ -96,8 +108,6 @@ def main():
     # )
     # cfg["simulation"]["num_envs"] = old_num_envs
 
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 &")
-    eval_env.connectUnity()
 
     """
     for i in range(1):
@@ -120,38 +130,42 @@ def main():
     time.sleep(0.2)
     """
 
+    custom_callback = CustomCallback(train_env)
+
+
     model = PPO(
-            tensorboard_log=log_dir,
-            policy="MlpPolicy",
-            policy_kwargs=dict(
-                    features_extractor_class=CompassModel,
-                    features_extractor_kwargs=dict(linear_prob=True,
-                                                   pretrained_encoder_path=os.environ["COMPASS_CKPT"],
-                                                   feature_size=256),
-                    #                    features_extractor_class=SimpleCNNFE,
-                    #                    features_extractor_kwargs=dict(
-                    #                            features_dim=4),
-                    activation_fn=torch.nn.ReLU,
-                    net_arch=[256, dict(pi=[256, 256], vf=[512, 512])],
-                    log_std_init=-0.5,
-            ),
-            env=train_env,
-            # eval_env=eval_env,
-            use_tanh_act=True,
-            gae_lambda=0.95,
-            gamma=0.99,
-            n_steps=250,
-            ent_coef=0.0,
-            vf_coef=0.5,
-            max_grad_norm=0.5,
-            batch_size=train_env.num_envs,
-            clip_range=0.2,
-            use_sde=False,  # don't use (gSDE), doesn't work
-            env_cfg=cfg,
-            verbose=1,
+        tensorboard_log=log_dir,
+        policy="MlpPolicy",
+        policy_kwargs=dict(
+            features_extractor_class=CompassModel,
+            features_extractor_kwargs=dict(linear_prob=True,
+                                           pretrained_encoder_path=os.environ["COMPASS_CKPT"],
+                                           feature_size=256),
+            # features_extractor_class=SimpleCNNFE,
+            # features_extractor_kwargs=dict(
+            #        features_dim=256),
+            activation_fn=torch.nn.ReLU,
+            net_arch=[256, dict(pi=[128, 128], vf=[256, 256])],
+            log_std_init=-0.5,
+        ),
+        env=train_env,
+        eval_env=eval_env,
+        use_tanh_act=True,
+        gae_lambda=0.95,
+        gamma=0.99,
+        n_steps=10,
+        ent_coef=0.002,
+        vf_coef=0.5,
+        max_grad_norm=0.5,
+        batch_size=10,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+        clip_range=0.2,
+        use_sde=False,
+        env_cfg=cfg,
+        verbose=1,
     )
-    model.learn(total_timesteps=int(5 * 1e7), log_interval=(1, 5))
-    print("ENDED!!!")
+    model.learn(total_timesteps=int(5 * 1e7), log_interval=(1, 5), callback=custom_callback)
+
+    print("Train ended!!!")
 
 
 if __name__ == "__main__":
