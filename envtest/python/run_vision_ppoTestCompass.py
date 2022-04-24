@@ -4,9 +4,12 @@ import math
 #
 import os
 import random
+import sys
 import time
 
 import cv2
+
+sys.path.append('/home/cam/Desktop/sim-ros2/icra22_competition_ws/src/agile_flight/')
 
 import numpy as np
 import torch
@@ -16,15 +19,16 @@ from stable_baselines3.common.utils import get_device
 from stable_baselines3.ppo.policies import MlpPolicy
 
 # from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
-from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
-from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
-from compass_custom_feature_extractor import SimpleCNNFE
+from rpg_baselines.torch.envs import vec_env_wrapper as wrapper
+from rpg_baselines.torch.common.util import test_policy
 from threading import Thread
 from stable_baselines3 import PPO
 from dronenavigation.models.compass.compass_model import CompassModel
 from customCallback import CustomCallback
 from threading import Thread
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+import os
+import glob
 
 cfg = YAML().load(
     open(
@@ -69,7 +73,7 @@ def main():
     cfg["unity"]["output_port"] = 10254
 
     train_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train")
+        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
 
     configure_random_seed(args.seed, env=train_env)
     os.system(
@@ -98,9 +102,17 @@ def main():
     """
     ###############--SETUP FOLDERS--###############
     rsg_root = os.path.dirname(os.path.abspath(__file__))
-    log_dir = rsg_root + "/saved"
+    log_dir = rsg_root + "/saved/"
 
-    os.makedirs(log_dir, exist_ok=True)
+    print(log_dir)
+
+    list = glob.glob("./PPO_*")
+    if list:
+        str = max(list)
+    else:
+        str = "0000"
+    str = str[-4:]
+    os.makedirs("./PPO_{:04d}".format(int(str) + 1))
 
     os.makedirs(log_dir, exist_ok=True)
     tensorboard_dir = log_dir + "/tensorboard/"
