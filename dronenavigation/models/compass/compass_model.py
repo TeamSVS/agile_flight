@@ -22,13 +22,13 @@ class CompassModel(BaseFeaturesExtractor):
         from .select_backbone import select_resnet
         self.encoder, _, _, _, param = select_resnet('resnet18')
 
-        if self.linear_prob:
+        if self.linear_prob:  # MLP
             self.pred = nn.Sequential(
-                    nn.Linear(param['feature_size'], 128),
-                    nn.ReLU(inplace=True),
-                    nn.Linear(128, 4)
+                nn.Linear(param['feature_size'], 128),
+                nn.ReLU(inplace=True),
+                nn.Linear(128, 4)
             )
-        else:
+        else:  # CNN
             self.pred = nn.Conv2d(param['feature_size'], param['feature_size'], kernel_size=1, padding=0)
 
         _initialize_weights(self.pred)
@@ -55,9 +55,16 @@ class CompassModel(BaseFeaturesExtractor):
     def forward(self, x):
 
         # x: B, C, SL, H, W
-
+        # mi arriva x con shape [B,C,H,W]
+        # B=batch -> n droni
+        # C= n_channels (Es: RGB, C=3)
+        # SL = boh (e dato che non glielo passiamo facciamo la unsqueeze)
+        # H e W = height e width dell'immagine
         x = x.unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
+
+        # encoder fa da predict. Prende la x e ritorna B feature con shape [C',1,H',W']
         x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
+        #  C' assume valore n_feature
         """
         if self.linear_prob:
             x = x.mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
