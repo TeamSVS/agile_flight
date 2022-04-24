@@ -73,7 +73,7 @@ def main():
     log_dir = rsg_root + "/saved"
     os.makedirs(log_dir, exist_ok=True)
 
-    cfg2["unity"]["render"] = "no"
+    cfg2["unity"]["render"] = "yes"
     cfg2["rgb_camera"]["on"] = "yes"
     cfg2["simulation"]["num_envs"] = 1
     cfg2["unity"]["input_port"] = "10255"
