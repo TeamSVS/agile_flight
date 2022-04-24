@@ -3,9 +3,13 @@ import argparse
 import math
 #
 import os
+import sys
 import time
 
 import cv2
+
+sys.path.append('/home/zaks/icra22_competition_ws/src/agile_flight/')
+
 
 import numpy as np
 import torch
@@ -17,11 +21,11 @@ from stable_baselines3.ppo.policies import MlpPolicy
 #from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
-from compass_custom_feature_extractor import SimpleCNNFE
+#from compass_custom_feature_extractor import SimpleCNNFE
 from threading import Thread
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from dronenavigation.models.compass.compass_model import CompassModel
-from customCallback import CustomCallback
+from .customCallback import CustomCallback
 from threading import Thread
 
 cfg = YAML().load(
