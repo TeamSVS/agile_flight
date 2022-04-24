@@ -70,10 +70,7 @@ def main():
     # set random seed
     #MI mancava questo riga ecco perche non parteva
     configure_random_seed(args.seed, env=train_env)
-
     os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
-
-
     train_env.connectUnity()
     # save the configuration and other files
     rsg_root = os.path.dirname(os.path.abspath(__file__))
