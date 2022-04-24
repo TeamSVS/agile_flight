@@ -59,9 +59,11 @@ def main():
     torch.cuda.set_device(0)
     print(torch.cuda.current_device())
 
-
+    cfg["simulation"]["num_envs"] = 2
     cfg["unity"]["render"] = "yes"
     cfg["rgb_camera"]["on"] = "yes"
+    cfg["unity"]["input_port"] = 10253
+    cfg["unity"]["output_port"] = 10254
     train_env = VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
     train_env = wrapper.FlightEnvVec(train_env)
 
@@ -69,7 +71,8 @@ def main():
     #MI mancava questo riga ecco perche non parteva
     configure_random_seed(args.seed, env=train_env)
 
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 &")
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
+
 
     train_env.connectUnity()
     # save the configuration and other files
@@ -77,9 +80,11 @@ def main():
     log_dir = rsg_root + "/saved"
     os.makedirs(log_dir, exist_ok=True)
 
-    cfg["unity"]["render"] = "no"
+    cfg["unity"]["render"] = "yes"
     cfg["rgb_camera"]["on"] = "yes"
     cfg["simulation"]["num_envs"] = 1
+    cfg["unity"]["input_port"] = 10255
+    cfg["unity"]["output_port"] = 10256
     
      # create evaluation environment
     #old_num_envs = cfg["simulation"]["num_envs"]
@@ -88,6 +93,9 @@ def main():
         VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
     )
     #cfg["simulation"]["num_envs"] = old_num_envs
+
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 &")
+    eval_env.connectUnity()
 
     """
     for i in range(1):
