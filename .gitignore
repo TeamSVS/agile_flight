@@ -35,3 +35,5 @@ GPATH
 saved
 COMPASS
 data
+dronenavigation/*
+!dronenavigation/models
