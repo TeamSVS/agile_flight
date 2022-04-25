@@ -98,17 +98,16 @@ def main():
     """
     ###############--SETUP FOLDERS--###############
     rsg_root = os.path.dirname(os.path.abspath(__file__))
-    log_dir = rsg_root + "/saved/"
+    semipath = rsg_root + "/saved/"
 
-    print(log_dir)
-
-    list = glob.glob("./PPO_*")
-    if list:
-        str = max(list)
+    list_dir = glob.glob(semipath + "/PPO_*")
+    if list_dir:
+        num_dir = max(list_dir)
     else:
-        str = "0000"
-    str = str[-4:]
-    os.makedirs("./PPO_{:04d}".format(int(str) + 1))
+        num_dir = "0"
+    num_dir = num_dir[-4:]
+    log_dir = (semipath + "/PPO_{:04d}").format(int(num_dir) + 1)
+    os.makedirs(log_dir)
 
     os.makedirs(log_dir, exist_ok=True)
     tensorboard_dir = log_dir + "/tensorboard/"
