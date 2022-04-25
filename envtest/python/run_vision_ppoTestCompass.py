@@ -121,7 +121,7 @@ def main():
 
     model = PPO(
         tensorboard_log=log_dir,
-        policy="MlpPolicy",
+        policy="MultiInputPolicy",
         policy_kwargs=dict(
             features_extractor_class=CompassModel,
             features_extractor_kwargs=dict(linear_prob=True,
@@ -133,7 +133,9 @@ def main():
             activation_fn=torch.nn.ReLU,
             net_arch=[256, dict(pi=[128, 128], vf=[256, 256])],
             log_std_init=-0.5,
+            normalize_images=False,
         ),
+
         env=train_env,
         # eval_env=train_env, OLD PPO
         # eval_env=eval_env, OLD PPO
