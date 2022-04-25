@@ -49,8 +49,6 @@ class CompassModel(BaseFeaturesExtractor):
 
         # x: B, C, SL, H, W
 
-        # RGB
-
         x["rgb"] = x["rgb"].unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
         x["rgb"] = self.model_rgb(
             x["rgb"])  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
@@ -66,5 +64,4 @@ class CompassModel(BaseFeaturesExtractor):
         # x = torch.randint(20, size=(2, 256), device=0) / 20
         print("X")
         x["depth"] = x["depth"].mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
-
-        return x["depth"]
+        return torch.cat((x["rgb"], x["depth"], x["state"]), 1)
