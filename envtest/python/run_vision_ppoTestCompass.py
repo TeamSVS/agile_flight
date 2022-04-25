@@ -25,7 +25,7 @@ from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_po
 from threading import Thread
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from dronenavigation.models.compass.compass_model import CompassModel
-from .customCallback import CustomCallback
+from customCallback import CustomCallback
 from threading import Thread
 
 cfg = YAML().load(
@@ -157,11 +157,11 @@ def main():
         use_tanh_act=True,
         gae_lambda=0.95,
         gamma=0.99,
-        n_steps=10,
+        n_steps=100,
         ent_coef=0.002,
         vf_coef=0.5,
         max_grad_norm=0.5,
-        batch_size=10,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+        batch_size=100,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
         clip_range=0.2,
         use_sde=False,
         env_cfg=cfg,
