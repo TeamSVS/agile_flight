@@ -159,7 +159,7 @@ def main():
                                              name_prefix='ppo_model')
 
     model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
-                callback=[eval_callback, checkpoint_callback, custom_callback])
+                callback=[eval_callback, checkpoint_callback])
 
     print("Train ended!!!")
 
