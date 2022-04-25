@@ -19,7 +19,7 @@ class CompassModel(BaseFeaturesExtractor):
         super(CompassModel, self).__init__(observation_space, feature_size)
         self.pretrained_encoder_path = pretrained_encoder_path
         from .select_backbone import select_resnet
-        self.encoder, _, _, _, param = select_resnet('resnet18')
+        self.model_rgb, _, self.model_depth, _, param = select_resnet('resnet18')
         self.load_pretrained_encoder_weights(self.pretrained_encoder_path)
 
     def load_pretrained_encoder_weights(self, pretrained_path):
@@ -31,13 +31,16 @@ class CompassModel(BaseFeaturesExtractor):
                 print("Compass CPU")
                 ckpt = torch.load(pretrained_path, map_location=torch.device('cpu'))['state_dict']
 
-            ckpt2 = {}
+            ckpt_rgb = {}
+            ckpt_depth = {}
             for key in ckpt:
                 if key.startswith('backbone_rgb'):
-                    ckpt2[key.replace('backbone_rgb.', '')] = ckpt[key]
+                    ckpt_rgb[key.replace('backbone_rgb.', '')] = ckpt[key]
                 elif key.startswith('module.backbone'):
-                    ckpt2[key.replace('module.backbone.', '')] = ckpt[key]
-            self.encoder.load_state_dict(ckpt2)
+                    ckpt_rgb[key.replace('module.backbone.', '')] = ckpt[key]
+                elif key.startswith('backbone_depth.'):
+                    ckpt_depth[key.replace('backbone_depth.', '')] = ckpt[key]
+            self.model_rgb.load_state_dict(ckpt_rgb)
             print('Successfully loaded pretrained checkpoint: {}.'.format(pretrained_path))
         else:
             print('Train from scratch.')
@@ -45,11 +48,23 @@ class CompassModel(BaseFeaturesExtractor):
     def forward(self, x):
 
         # x: B, C, SL, H, W
-        x = x.unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
 
-        x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
+        # RGB
 
+        x["rgb"] = x["rgb"].unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
+        x["rgb"] = self.model_rgb(
+            x["rgb"])  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
         print("_")
         # x = torch.randint(20, size=(2, 256), device=0) / 20
-        x = x.mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
-        return x
+        x["rgb"] = x["rgb"].mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
+
+        # Depth
+        x["depth"] = x["depth"].unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
+        x["depth"] = self.model_depth(
+            x["depth"])  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
+        print("_")
+        # x = torch.randint(20, size=(2, 256), device=0) / 20
+        print("X")
+        x["depth"] = x["depth"].mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
+
+        return x["depth"]

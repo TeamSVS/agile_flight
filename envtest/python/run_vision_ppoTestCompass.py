@@ -69,7 +69,7 @@ def main():
     cfg["unity"]["output_port"] = 10254
 
     train_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train")
+        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train", "both")
 
     configure_random_seed(args.seed, env=train_env)
     os.system(
