@@ -4,12 +4,9 @@ import math
 #
 import os
 import random
-import sys
 import time
 
 import cv2
-
-sys.path.append('/home/cam/Desktop/sim-ros2/icra22_competition_ws/src/agile_flight/')
 
 import numpy as np
 import torch
@@ -19,8 +16,8 @@ from stable_baselines3.common.utils import get_device
 from stable_baselines3.ppo.policies import MlpPolicy
 
 # from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
-from rpg_baselines.torch.envs import vec_env_wrapper as wrapper
-from rpg_baselines.torch.common.util import test_policy
+from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
+from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
 from threading import Thread
 from stable_baselines3 import PPO
 from dronenavigation.models.compass.compass_model import CompassModel
@@ -66,14 +63,13 @@ def main():
 
     ###############--LOAD CFG ENV 1--###############
 
-    cfg["simulation"]["num_envs"] = 2
     cfg["unity"]["render"] = "yes"
     cfg["rgb_camera"]["on"] = "yes"
     cfg["unity"]["input_port"] = 10253
     cfg["unity"]["output_port"] = 10254
 
     train_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
+        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train")
 
     configure_random_seed(args.seed, env=train_env)
     os.system(
