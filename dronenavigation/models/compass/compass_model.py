@@ -21,6 +21,7 @@ class CompassModel(BaseFeaturesExtractor):
         from .select_backbone import select_resnet
         self.model_rgb, _, self.model_depth, _, param = select_resnet('resnet18')
         self.load_pretrained_encoder_weights(self.pretrained_encoder_path)
+        self.mode = "both"
 
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
@@ -45,23 +46,31 @@ class CompassModel(BaseFeaturesExtractor):
         else:
             print('Train from scratch.')
 
-    def forward(self, x):
-
-        # x: B, C, SL, H, W
-
+    def __tune_rgb_tensor(self, x):
         x["rgb"] = x["rgb"].unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
         x["rgb"] = self.model_rgb(
             x["rgb"])  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
-        print("_")
-        # x = torch.randint(20, size=(2, 256), device=0) / 20
         x["rgb"] = x["rgb"].mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
 
-        # Depth
+    def __tune_depth_tensor(self, x):
         x["depth"] = x["depth"].unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
         x["depth"] = self.model_depth(
             x["depth"])  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.
         print("_")
         # x = torch.randint(20, size=(2, 256), device=0) / 20
-        print("X")
         x["depth"] = x["depth"].mean(dim=(2, 3, 4))  # Shape: [B,C',1,H',W'] -> [B,C'].
-        return torch.cat((x["rgb"], x["depth"], x["state"]), 1)
+
+    def forward(self, x):
+
+        # x: B, C, SL, H, W
+        if self.mode == "rgb":
+            self.__tune_rgb_tensor(x)
+            return torch.cat((x["rgb"], x["state"]), 1)
+        elif self.mode == "depth":
+            self.__tune_depth_tensor(x)
+            return torch.cat((x["depth"], x["state"]), 1)
+        else:
+            self.__tune_rgb_tensor(x)
+            self.__tune_depth_tensor(x)
+            return torch.cat((x["rgb"], x["depth"], x["state"]), 1)
+
