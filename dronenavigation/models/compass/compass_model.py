@@ -22,6 +22,11 @@ class CompassModel(BaseFeaturesExtractor):
         self.model_rgb, _, self.model_depth, _, param = select_resnet('resnet18')
         self.load_pretrained_encoder_weights(self.pretrained_encoder_path)
 
+        for param in self.model_rgb.encoder.parameters():
+            param.requires_grad = False  # not update by gradient
+        for param in self.model_depth.encoder.parameters():
+            param.requires_grad = False  # not update by gradient
+
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
             if torch.cuda.is_available():
@@ -65,4 +70,3 @@ class CompassModel(BaseFeaturesExtractor):
             tensor_concat = torch.cat((tensor_concat, x["depth"]), 1)
 
         return tensor_concat
-
