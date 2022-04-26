@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import logging
 
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
@@ -22,13 +23,18 @@ class CompassModel(BaseFeaturesExtractor):
         self.model_rgb, _, self.model_depth, _, param = select_resnet('resnet18')
         self.load_pretrained_encoder_weights(self.pretrained_encoder_path)
 
+        for param in self.model_rgb.parameters():
+            param.requires_grad = False  # not update by gradient
+        for param in self.model_depth.parameters():
+            param.requires_grad = False  # not update by gradient
+
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
             if torch.cuda.is_available():
-                print("Compass CUDA")
+                logging.info("Compass CUDA")
                 ckpt = torch.load(pretrained_path)['state_dict']  # COMPASS checkpoint format.
             else:
-                print("Compass CPU")
+                logging.info("Compass CPU")
                 ckpt = torch.load(pretrained_path, map_location=torch.device('cpu'))['state_dict']
 
             ckpt_rgb = {}
@@ -41,12 +47,12 @@ class CompassModel(BaseFeaturesExtractor):
                 elif key.startswith('backbone_depth.'):
                     ckpt_depth[key.replace('backbone_depth.', '')] = ckpt[key]
             self.model_rgb.load_state_dict(ckpt_rgb)
-            print('Successfully loaded pretrained checkpoint: {}.'.format(pretrained_path))
+            logging.info('Successfully loaded pretrained checkpoint: {}.'.format(pretrained_path))
         else:
-            print('Train from scratch.')
+            logging.info('Train from scratch.')
 
     def forward(self, x):
-        print("_")
+        logging.info("_")
         # x: B, C, SL, H, W
         # concat order: state-rgb-depth
         tensor_concat = x["state"]
@@ -65,4 +71,3 @@ class CompassModel(BaseFeaturesExtractor):
             tensor_concat = torch.cat((tensor_concat, x["depth"]), 1)
 
         return tensor_concat
-

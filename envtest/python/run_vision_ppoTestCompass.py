@@ -31,6 +31,9 @@ from threading import Thread
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import os
 import glob
+import logging
+
+logging.basicConfig(level=logging.WARNING)
 
 cfg = YAML().load(
     open(
@@ -65,7 +68,6 @@ def parser():
 
 def main():
     args = parser().parse_args()
-
     ###############--LOAD CFG ENV 1--###############
 
     cfg["unity"]["render"] = "yes"
@@ -172,7 +174,7 @@ def main():
     model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
                 callback=[eval_callback, checkpoint_callback])
 
-    print("Train ended!!!")
+    logging.info("Train ended!!!")
 
 
 if __name__ == "__main__":
