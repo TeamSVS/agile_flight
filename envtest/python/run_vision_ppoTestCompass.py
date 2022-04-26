@@ -79,7 +79,7 @@ def main():
         VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train", "both")
 
     configure_random_seed(args.seed, env=train_env)
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 -batchmode &")
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
     train_env.connectUnity()
 
     ###############--LOAD CFG ENV 2--###############
