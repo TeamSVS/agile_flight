@@ -41,7 +41,7 @@ def main():
         cfg["rgb_camera"]["on"] = "yes"
 
     # load the Unity standardalone, make sure you have downloaded it.
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 &")
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -batchmode &")
 
     # define the number of environment for parallelization simulation
     cfg["simulation"]["num_envs"] = 1

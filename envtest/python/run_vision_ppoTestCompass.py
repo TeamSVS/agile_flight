@@ -79,7 +79,7 @@ def main():
         VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
 
     configure_random_seed(args.seed, env=train_env)
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 -batchmode &")
     train_env.connectUnity()
 
     rsg_root = os.path.dirname(os.path.abspath(__file__))
@@ -99,7 +99,7 @@ def main():
         VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
 
     configure_random_seed(args.seed, env=eval_env)
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 &")
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 -batchmode &")
     eval_env.connectUnity()
 
 
