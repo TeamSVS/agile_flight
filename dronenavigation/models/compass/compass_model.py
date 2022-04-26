@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import logging
 
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
@@ -25,10 +26,10 @@ class CompassModel(BaseFeaturesExtractor):
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
             if torch.cuda.is_available():
-                print("Compass CUDA")
+                logging.info("Compass CUDA")
                 ckpt = torch.load(pretrained_path)['state_dict']  # COMPASS checkpoint format.
             else:
-                print("Compass CPU")
+                logging.info("Compass CPU")
                 ckpt = torch.load(pretrained_path, map_location=torch.device('cpu'))['state_dict']
 
             ckpt_rgb = {}
@@ -41,12 +42,12 @@ class CompassModel(BaseFeaturesExtractor):
                 elif key.startswith('backbone_depth.'):
                     ckpt_depth[key.replace('backbone_depth.', '')] = ckpt[key]
             self.model_rgb.load_state_dict(ckpt_rgb)
-            print('Successfully loaded pretrained checkpoint: {}.'.format(pretrained_path))
+            logging.info('Successfully loaded pretrained checkpoint: {}.'.format(pretrained_path))
         else:
-            print('Train from scratch.')
+            logging.info('Train from scratch.')
 
     def forward(self, x):
-        print("_")
+        logging.info("_")
         # x: B, C, SL, H, W
         # concat order: state-rgb-depth
         tensor_concat = x["state"]
