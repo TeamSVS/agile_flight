@@ -27,7 +27,8 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import os
 import glob
 import logging
-logging.basicConfig(level=logging.INFO)
+
+logging.basicConfig(level=logging.WARNING)
 
 cfg = YAML().load(
     open(
@@ -165,6 +166,7 @@ def main():
                 callback=[eval_callback, checkpoint_callback])
 
     logging.info("Train ended!!!")
+
 
 if __name__ == "__main__":
     main()
