@@ -3,7 +3,7 @@
 import argparse
 import os
 import random
-
+import logging
 import cv2
 import numpy as np
 from flightgym import VisionEnv_v1
@@ -63,7 +63,7 @@ def main():
         env.connectUnity()
 
     for frame_id in range(ep_length):
-        print("Simuation step: {0}".format(frame_id))
+        logging.info("Simuation step: {0}".format(frame_id))
         # generate dummmy action [-1, 1]
         dummy_actions = np.random.rand(num_env, act_dim) * 2 - np.ones(shape=(num_env, act_dim))
 
@@ -72,7 +72,7 @@ def main():
 
         #
         receive_frame_id = env.render(frame_id=frame_id)
-        print("sending frame id: ", frame_id, "received frame id: ", receive_frame_id)
+        logging.info("sending frame id: ", frame_id, "received frame id: ", receive_frame_id)
 
         # ====== Retrive RGB Image From the simulator=========
         raw_rgb_img = env.getImage(rgb=True)
@@ -110,7 +110,7 @@ def main():
         # wait for the purpose of using open cv visualization
         cv2.waitKey(500)
 
-    print(env.getImage())
+    logging.info(env.getImage())
     #
     if args.render:
         env.disconnectUnity()
