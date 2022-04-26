@@ -45,8 +45,6 @@ class CompassModel(BaseFeaturesExtractor):
     def forward(self, x):
 
         # x: B, C, SL, H, W
-        if x.shape.__len__() == 3:
-            x = x.unsqueeze(0)  # FIX used for train env with 1 drone(yaml num env). compass need 5D tensor
         x = x.unsqueeze(2)  # Shape: [B,C,H,W] -> [B,C,1,H,W].
 
         x = self.encoder(x)  # Shape: [B,C,1,H,W] -> [B,C',1,H',W']. FIXME: Need to check the shape of output here.

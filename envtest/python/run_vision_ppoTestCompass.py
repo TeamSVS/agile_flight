@@ -4,6 +4,7 @@ import math
 #
 import os
 import sys
+import random
 import time
 
 import cv2
@@ -18,15 +19,18 @@ from ruamel.yaml import YAML, RoundTripDumper, dump
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.ppo.policies import MlpPolicy
 
-#from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
+# from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
 #from compass_custom_feature_extractor import SimpleCNNFE
 from threading import Thread
-from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
+from stable_baselines3 import PPO
 from dronenavigation.models.compass.compass_model import CompassModel
 from customCallback import CustomCallback
 from threading import Thread
+from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+import os
+import glob
 
 cfg = YAML().load(
     open(
@@ -44,13 +48,14 @@ cfg2 = YAML().load(
 def configure_random_seed(seed, env=None):
     if env is not None:
         env.seed(seed)
+    random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
 
 
 def parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, default=0, help="Random seed")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--train", type=int, default=1, help="Train the policy or evaluate the policy")
     parser.add_argument("--render", type=int, default=0, help="Render with Unity")
     parser.add_argument("--trial", type=int, default=1, help="PPO trial number")
@@ -61,85 +66,71 @@ def parser():
 def main():
     args = parser().parse_args()
 
-    print(torch.cuda.is_available())
-    print(torch.cuda.device_count())
-    print(torch.cuda.current_device())
-    print(torch.version.cuda)
-    torch.cuda.set_device(0)
-    print(torch.cuda.current_device())
-    from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
+    ###############--LOAD CFG ENV 1--###############
 
-    cfg["simulation"]["num_envs"] = 2
     cfg["unity"]["render"] = "yes"
     cfg["rgb_camera"]["on"] = "yes"
     cfg["unity"]["input_port"] = 10253
     cfg["unity"]["output_port"] = 10254
 
     train_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
+        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train", "both")
 
     configure_random_seed(args.seed, env=train_env)
     os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 -batchmode &")
     train_env.connectUnity()
 
-    rsg_root = os.path.dirname(os.path.abspath(__file__))
-    log_dir = rsg_root + "/saved"
-    os.makedirs(log_dir, exist_ok=True)
+    ###############--LOAD CFG ENV 2--###############
+    """
+    cfg2["unity"]["render"] = "no"
+    cfg2["rgb_camera"]["on"] = "yes"
+    cfg2["simulation"]["num_envs"] = 1
+    cfg2["unity"]["input_port"] = 10255
+    cfg2["unity"]["output_port"] = 10256
 
-    cfg["unity"]["render"] = "yes"
-    cfg["rgb_camera"]["on"] = "yes"
-    cfg["simulation"]["num_envs"] = 1
-    cfg["unity"]["input_port"] = 10255
-    cfg["unity"]["output_port"] = 10256
-
-     # create evaluation environment
-    #old_num_envs = cfg["simulation"]["num_envs"]
-    #cfg["simulation"]["num_envs"] = 1
-    eval_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False))
-
-    configure_random_seed(args.seed, env=eval_env)
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 -batchmode &")
-    eval_env.connectUnity()
-
-
-    #cfg["simulation"]["num_envs"] = old_num_envs
     # create evaluation environment
     # old_num_envs = cfg["simulation"]["num_envs"]
     # cfg["simulation"]["num_envs"] = 1
-    # eval_env = wrapper.FlightEnvVec(
-    #        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
-    # )
-    # cfg["simulation"]["num_envs"] = old_num_envs
+    eval_env = wrapper.FlightEnvVec(
+        VisionEnv_v1(dump(cfg2, Dumper=RoundTripDumper), False), "eval")
 
+    configure_random_seed(args.seed, env=eval_env)
+<<<<<<< HEAD
+    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 -batchmode &")
+    eval_env.connectUnity()
+=======
+>>>>>>> 4d7f372c52281d63d9cef76d6086d55d2b2d42c6
+
+    # os.system( os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port
+    # 10256 &")
 
     """
-    for i in range(1):
-        obs_dim = train_env.obs_dim
-    act_dim = train_env.act_dim
-    num_env = train_env.num_envs
+    ###############--SETUP FOLDERS--###############
+    rsg_root = os.path.dirname(os.path.abspath(__file__))
+    semipath = rsg_root + "/saved/"
 
-    # generate dummy action [-1, 1]
-    train_env.reset()
-    dummy_actions = np.random.rand(num_env, act_dim) * 2 - np.ones(shape=(num_env, act_dim))
+    list_dir = glob.glob(semipath + "/PPO_*")
+    if list_dir:
+        num_dir = max(list_dir)
+    else:
+        num_dir = "0"
+    num_dir = num_dir[-4:]
+    log_dir = (semipath + "/PPO_{:04d}").format(int(num_dir) + 1)
+    os.makedirs(log_dir)
 
-    z = train_env.getObs()
-    x = train_env.step(dummy_actions)
-    y = train_env.getObs()
-    h = train_env.getImage()
-    print(h)
-    train_env.render(i)
-    if i == 10:
-        train_env.reset(True)
-    time.sleep(0.2)
-    """
+    os.makedirs(log_dir, exist_ok=True)
+    tensorboard_dir = log_dir + "/tensorboard/"
+    os.makedirs(tensorboard_dir, exist_ok=True)
+    best_dir = log_dir + "/best_model/"
+    os.makedirs(best_dir, exist_ok=True)
+    model_dir = log_dir + "/model/"
+    os.makedirs(model_dir, exist_ok=True)
 
     custom_callback = CustomCallback(train_env)
 
-
     model = PPO(
         tensorboard_log=log_dir,
-        policy="MlpPolicy",
+        policy="MultiInputPolicy",
         policy_kwargs=dict(
             features_extractor_class=CompassModel,
             features_extractor_kwargs=dict(linear_prob=True,
@@ -153,21 +144,31 @@ def main():
             log_std_init=-0.5,
         ),
         env=train_env,
-        eval_env=eval_env,
-        use_tanh_act=True,
-        gae_lambda=0.95,
+        # eval_env=train_env, OLD PPO
+        # eval_env=eval_env, OLD PPO
+        # use_tanh_act=True, OLD PPO
+        # gae_lambda=0.95,
         gamma=0.99,
         n_steps=100,
+        seed=args.seed,
         ent_coef=0.002,
         vf_coef=0.5,
         max_grad_norm=0.5,
         batch_size=100,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
         clip_range=0.2,
         use_sde=False,
-        env_cfg=cfg,
+        # env_cfg=cfg, OLD PPO
         verbose=1,
     )
-    model.learn(total_timesteps=int(5 * 1e7), log_interval=(1, 5), callback=custom_callback)
+
+    eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
+                                 log_path=tensorboard_dir, eval_freq=6000,
+                                 n_eval_episodes=10, deterministic=True)
+    checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
+                                             name_prefix='ppo_model')
+
+    model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
+                callback=[eval_callback, checkpoint_callback])
 
     print("Train ended!!!")
 
