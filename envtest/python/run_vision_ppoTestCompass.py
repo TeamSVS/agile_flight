@@ -31,15 +31,15 @@ import logging
 logging.basicConfig(level=logging.WARNING)
 
 cfg = YAML().load(
-    open(
-        os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
-    )
+        open(
+                os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
+        )
 )
 
 cfg2 = YAML().load(
-    open(
-        os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
-    )
+        open(
+                os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
+        )
 )
 
 
@@ -71,11 +71,12 @@ def main():
     cfg["unity"]["output_port"] = 10254
 
     train_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train", "both")
+            VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train", "rgb")
 
     configure_random_seed(args.seed, env=train_env)
     os.system(
-        os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
+            os.environ[
+                "FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
     train_env.connectUnity()
 
     ###############--LOAD CFG ENV 2--###############
@@ -122,38 +123,46 @@ def main():
     custom_callback = CustomCallback(train_env)
 
     model = PPO(
-        tensorboard_log=log_dir,
-        policy="MultiInputPolicy",
-        policy_kwargs=dict(
-            features_extractor_class=CompassModel,
-            features_extractor_kwargs=dict(linear_prob=True,
-                                           pretrained_encoder_path=os.environ["COMPASS_CKPT"],
-                                           feature_size=525),
-            # features_extractor_class=SimpleCNNFE,
-            # features_extractor_kwargs=dict(
-            #        features_dim=256),
-            activation_fn=torch.nn.ReLU,
-            net_arch=[525, dict(pi=[128, 128], vf=[256, 256])],
-            log_std_init=-0.5,
-            normalize_images=False,
-        ),
+            tensorboard_log=log_dir,
+            policy="MultiInputPolicy",
+            policy_kwargs=dict(
+                    features_extractor_class=CompassModel,
+                    features_extractor_kwargs=dict(linear_prob=True,
+                                                   pretrained_encoder_path=os.environ["COMPASS_CKPT"],
+                                                   feature_size=269),
+                    # features_extractor_class=SimpleCNNFE,
+                    # features_extractor_kwargs=dict(
+                    #        features_dim=256),
+                    activation_fn=torch.nn.ReLU,
+                    net_arch=[269, dict(pi=[269, 134, 67], vf=[269, 134, 67])],
+                    # Number hidden layer 1-3 TODO last layer?
+                    log_std_init=-0.5,
+                    normalize_images=False,
+                    # optimizer_kwargs=dict(weight_decay=0, betas=0.9),  # Adam optimizer TODO
+            ),
 
-        env=train_env,
-        # eval_env=train_env, OLD PPO
-        # eval_env=eval_env, OLD PPO
-        # use_tanh_act=True, OLD PPO
-        # gae_lambda=0.95,
-        gamma=0.99,
-        seed=args.seed,
-        n_steps=10,
-        ent_coef=0.002,
-        vf_coef=0.5,
-        max_grad_norm=0.5,
-        batch_size=10,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
-        clip_range=0.2,
-        use_sde=False,
-        # env_cfg=cfg, OLD PPO
-        verbose=1,
+            env=train_env,
+            gamma=0.98,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
+            seed=args.seed,
+            ent_coef=0.002,  # Range:  0 - 0.01
+            vf_coef=0.75,  # OLD 0.5 Range 0.5-1
+            max_grad_norm=0.5,
+            clip_range=0.25,  # OLD 0.2
+            learning_rate=0.0003,  # OLD 0.0003 Range: 1e-5 - 1e-3
+            gae_lambda=0.9,  # OLD 95 Range 0.9-1
+            use_sde=False,  # action noise exploration vs GsDSE(true)
+            target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
+            verbose=1,
+            n_epochs=10,  # Range: 3 - 30
+            batch_size=10,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+            n_steps=10,  # Ragne: 512-5000
+
+            # env_cfg=cfg, OLD PPO
+            # eval_env=train_env, OLD PPO
+            # eval_env=eval_env, OLD PPO
+            # use_tanh_act=True, OLD PPO
+            # gae_lambda=0.95,
+
     )
 
     eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
