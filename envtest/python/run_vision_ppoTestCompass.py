@@ -30,6 +30,12 @@ import logging
 
 logging.basicConfig(level=logging.WARNING)
 
+######################################
+##########--COSTANT VALUES--##########
+######################################
+
+ENVIRONMENT_CHANGE_THRESHOLD = 150
+
 cfg = YAML().load(
     open(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
@@ -94,7 +100,7 @@ def main():
     ###############--SETUP CALLBACKS--###############
     ###############################################
 
-    custom_callback = CustomCallback()
+    custom_callback = CustomCallback(trigg_freq=ENVIRONMENT_CHANGE_THRESHOLD)
     eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
                                  log_path=tensorboard_dir, eval_freq=6000,
                                  n_eval_episodes=10, deterministic=True)

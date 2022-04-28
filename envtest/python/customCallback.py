@@ -8,7 +8,7 @@ import psutil
 from flightgym import VisionEnv_v1
 from ruamel.yaml import RoundTripDumper, YAML, dump
 from stable_baselines3.common.callbacks import BaseCallback
-
+import random
 # from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
@@ -20,9 +20,9 @@ class CustomCallback(BaseCallback):
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
 
-    def __init__(self, verbose=0):
+    def __init__(self, verbose=0, trigg_freq=0):
         super(CustomCallback, self).__init__(verbose)
-
+        self.trigg_freq = trigg_freq
         self.n_step = 0
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
@@ -57,7 +57,6 @@ class CustomCallback(BaseCallback):
         pass
 
     def _on_step(self) -> bool:
-        self.n_step += 1
         """
         This method will be called by the model after each call to `env.step()`.
 
@@ -67,16 +66,19 @@ class CustomCallback(BaseCallback):
         :return: (bool) If the callback returns False, training is aborted early.
         """
 
+        self.n_step += 1
         return True
 
     def _on_rollout_end(self) -> None:
-        if self.n_step >= 150:
-            self.training_env.change_obstacles()
-            self.n_step = 0
-
         """
         This event is triggered before updating the policy.
         """
+        diff = ["easy", "medium", "hard"]
+        if self.n_step >= self.trigg_freq:
+            new_lvl = random.randint(0, 100)
+            new_diff = diff[random.randint(0, 2)]
+            self.training_env.change_obstacles(level=new_lvl, difficult="medium")
+            self.n_step = 0
         pass
 
     def _on_training_end(self) -> None:
