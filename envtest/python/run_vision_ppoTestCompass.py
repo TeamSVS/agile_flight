@@ -1,47 +1,33 @@
 #!/usr/bin/env python3
 import argparse
-import math
-#
+import glob
+import logging
 import os
 import sys
 import random
-import time
-
-import cv2
 
 sys.path.append('/home/zaks/icra22_competition_ws/src/agile_flight/')
 
 
 import numpy as np
 import torch
-from flightgym import VisionEnv_v1
-from ruamel.yaml import YAML, RoundTripDumper, dump
-from stable_baselines3.common.utils import get_device
-from stable_baselines3.ppo.policies import MlpPolicy
+from ruamel.yaml import YAML
+from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 
+from customCallback import CustomCallback
+from dronenavigation.models.compass.compass_model import CompassModel
 # from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
-from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
-#from compass_custom_feature_extractor import SimpleCNNFE
-from threading import Thread
-from stable_baselines3 import PPO
-from dronenavigation.models.compass.compass_model import CompassModel
-from customCallback import CustomCallback
-from threading import Thread
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
-import os
-import glob
-import logging
-
 logging.basicConfig(level=logging.WARNING)
 
-cfg = YAML().load(
-    open(
-        os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
-    )
-)
+######################################
+##########--COSTANT VALUES--##########
+######################################
 
-cfg2 = YAML().load(
+ENVIRONMENT_CHANGE_THRESHOLD = 50000
+
+cfg = YAML().load(
     open(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
     )
@@ -68,46 +54,20 @@ def parser():
 
 def main():
     args = parser().parse_args()
+    ################################################
     ###############--LOAD CFG ENV 1--###############
+    ################################################
 
-    cfg["unity"]["render"] = "yes"
-    cfg["rgb_camera"]["on"] = "yes"
-    cfg["unity"]["input_port"] = 10253
-    cfg["unity"]["output_port"] = 10254
 
-    train_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False), "train", "both")
-
-    configure_random_seed(args.seed, env=train_env)
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10253 -output-port 10254 &")
+    train_env = wrapper.FlightEnvVec(cfg, "train", "rgb")
+    train_env.spawn_flightmare(10253, 10254)
     train_env.connectUnity()
+    configure_random_seed(42, train_env)
 
-    ###############--LOAD CFG ENV 2--###############
-    """
-    cfg2["unity"]["render"] = "no"
-    cfg2["rgb_camera"]["on"] = "yes"
-    cfg2["simulation"]["num_envs"] = 1
-    cfg2["unity"]["input_port"] = 10255
-    cfg2["unity"]["output_port"] = 10256
-
-    # create evaluation environment
-    # old_num_envs = cfg["simulation"]["num_envs"]
-    # cfg["simulation"]["num_envs"] = 1
-    eval_env = wrapper.FlightEnvVec(
-        VisionEnv_v1(dump(cfg2, Dumper=RoundTripDumper), False), "eval")
-
-    configure_random_seed(args.seed, env=eval_env)
-<<<<<<< HEAD
-    os.system(os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port 10256 -batchmode &")
-    eval_env.connectUnity()
-=======
->>>>>>> 4d7f372c52281d63d9cef76d6086d55d2b2d42c6
-
-    # os.system( os.environ["FLIGHTMARE_PATH"] + "/flightrender/RPG_Flightmare.x86_64 -input-port 10255 -output-port
-    # 10256 &")
-
-    """
+    ###############################################
     ###############--SETUP FOLDERS--###############
+    ###############################################
+
     rsg_root = os.path.dirname(os.path.abspath(__file__))
     semipath = rsg_root + "/saved/"
 
@@ -128,7 +88,19 @@ def main():
     model_dir = log_dir + "/model/"
     os.makedirs(model_dir, exist_ok=True)
 
-    custom_callback = CustomCallback(train_env)
+    #################################################
+    ###############--SETUP CALLBACKS--###############
+    #################################################
+
+    custom_callback = CustomCallback(trigg_freq=ENVIRONMENT_CHANGE_THRESHOLD)
+    eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
+                                 log_path=tensorboard_dir, eval_freq=6000,
+                                 n_eval_episodes=10, deterministic=True)
+    checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
+                                             name_prefix='ppo_model')
+    #################################################
+    ###############--SETUP PPO-MODEL--###############
+    #################################################
 
     model = PPO(
         tensorboard_log=log_dir,
@@ -137,42 +109,44 @@ def main():
             features_extractor_class=CompassModel,
             features_extractor_kwargs=dict(linear_prob=True,
                                            pretrained_encoder_path=os.environ["COMPASS_CKPT"],
-                                           feature_size=525),
+                                           feature_size=269),
             # features_extractor_class=SimpleCNNFE,
             # features_extractor_kwargs=dict(
             #        features_dim=256),
             activation_fn=torch.nn.ReLU,
-            net_arch=[525, dict(pi=[128, 128], vf=[256, 256])],
+            net_arch=[269, dict(pi=[269, 134, 67], vf=[269, 134, 67])],
+            # Number hidden layer 1-3 TODO last layer?
             log_std_init=-0.5,
             normalize_images=False,
+            # optimizer_kwargs=dict(weight_decay=0, betas=0.9),  # Adam optimizer TODO
         ),
 
         env=train_env,
+        gamma=0.98,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
+        seed=args.seed,
+        ent_coef=0.002,  # Range:  0 - 0.01
+        vf_coef=0.75,  # OLD 0.5 Range 0.5-1
+        max_grad_norm=0.5,
+        clip_range=0.25,  # OLD 0.2
+        learning_rate=0.0003,  # OLD 0.0003 Range: 1e-5 - 1e-3
+        gae_lambda=0.9,  # OLD 95 Range 0.9-1
+        use_sde=False,  # action noise exploration vs GsDSE(true)
+        target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
+        verbose=1,
+        n_epochs=10,  # Range: 3 - 30
+        batch_size=10,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+        n_steps=10,  # Ragne: 512-5000
+
+        # env_cfg=cfg, OLD PPO
         # eval_env=train_env, OLD PPO
         # eval_env=eval_env, OLD PPO
         # use_tanh_act=True, OLD PPO
         # gae_lambda=0.95,
-        gamma=0.99,
-        n_steps=100,
-        seed=args.seed,
-        ent_coef=0.002,
-        vf_coef=0.5,
-        max_grad_norm=0.5,
-        batch_size=100,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
-        clip_range=0.2,
-        use_sde=False,
-        # env_cfg=cfg, OLD PPO
-        verbose=1,
+
     )
 
-    eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
-                                 log_path=tensorboard_dir, eval_freq=6000,
-                                 n_eval_episodes=10, deterministic=True)
-    checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
-                                             name_prefix='ppo_model')
-
     model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
-                callback=[eval_callback, checkpoint_callback])
+                callback=[custom_callback, eval_callback, checkpoint_callback])
 
     logging.info("Train ended!!!")
 

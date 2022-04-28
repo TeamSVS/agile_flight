@@ -1,8 +1,16 @@
-import threading
-import time
-from threading import Thread
+import os
 
+import numpy as np
+import time
+
+from flightgym import VisionEnv_v1
+import psutil
+from flightgym import VisionEnv_v1
+from ruamel.yaml import RoundTripDumper, YAML, dump
 from stable_baselines3.common.callbacks import BaseCallback
+import random
+# from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
+from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
 
 class CustomCallback(BaseCallback):
@@ -12,13 +20,10 @@ class CustomCallback(BaseCallback):
     :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
     """
 
-    def __init__(self, env, verbose=0):
+    def __init__(self, verbose=0, trigg_freq=0):
         super(CustomCallback, self).__init__(verbose)
-        self.env = env
-        self.t = Thread(target=self.thread_renderer)
-        self.sleepEvent = threading.Event()
-        self.t.start()
-        self.blocked = False
+        self.trigg_freq = trigg_freq
+        self.start_counter = trigg_freq
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
         # The RL model
@@ -37,26 +42,13 @@ class CustomCallback(BaseCallback):
         # # to have access to the parent object
         # self.parent = None  # type: Optional[BaseCallback]
 
-    def thread_renderer(self):
-        self.sleepEvent.wait()
-        while True:
-
-            print("\t++")
-            self.env.render(1)
-            time.sleep(4)
-            while self.blocked:
-                self.sleepEvent.wait()
-
     def _on_training_start(self) -> None:
-
         """
         This method is called before the first rollout starts.
         """
         pass
 
     def _on_rollout_start(self) -> None:
-        print("\t Fine")
-        self.blocked = True
         """
         A rollout is the collection of environment interaction
         using the current policy.
@@ -77,17 +69,29 @@ class CustomCallback(BaseCallback):
         return True
 
     def _on_rollout_end(self) -> None:
-        print("\t Inizio")
-        self.blocked = False
-        self.sleepEvent.set()
         """
         This event is triggered before updating the policy.
         """
+
+        if self.num_timesteps >= self.start_counter:
+            diff = ["easy", "medium", "hard"]
+            if self.start_counter < 500000:
+                new_diff = diff[0]
+
+            elif 500000 < self.start_counter < 1500000:
+                new_diff = diff[1]
+            else:
+                new_diff = diff[2]
+
+            new_lvl = random.randint(0, 100)
+
+            # new_lvl = random.randint(0, 100)
+            # new_diff = diff[random.randint(0, 2)]
+            self.training_env.change_obstacles(level=new_lvl, difficult=new_diff)
+            self.start_counter += self.trigg_freq
         pass
 
     def _on_training_end(self) -> None:
-        print("\t Fine2")
-        self.blocked = True
         """
         This event is triggered before exiting the `learn()` method.
         """
