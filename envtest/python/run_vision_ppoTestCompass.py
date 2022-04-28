@@ -57,9 +57,9 @@ def main():
     ################################################
 
     train_env = wrapper.FlightEnvVec(cfg, "train", "rgb")
+
     train_env.spawn_flightmare(10253, 10254)
     train_env.connectUnity()
-
     configure_random_seed(42, train_env)
 
     ###############################################
