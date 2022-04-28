@@ -1,32 +1,21 @@
 #!/usr/bin/env python3
 import argparse
-import math
-#
+import glob
+import logging
 import os
+#
 import random
-import time
-
-import cv2
 
 import numpy as np
 import torch
-from flightgym import VisionEnv_v1
-from ruamel.yaml import YAML, RoundTripDumper, dump
-from stable_baselines3.common.utils import get_device
-from stable_baselines3.ppo.policies import MlpPolicy
+from ruamel.yaml import YAML
+from stable_baselines3 import PPO
+from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 
+from customCallback import CustomCallback
+from dronenavigation.models.compass.compass_model import CompassModel
 # from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
-from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
-from threading import Thread
-from stable_baselines3 import PPO
-from dronenavigation.models.compass.compass_model import CompassModel
-from customCallback import CustomCallback
-from threading import Thread
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
-import os
-import glob
-import logging
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -34,7 +23,7 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 150
+ENVIRONMENT_CHANGE_THRESHOLD = 50000
 
 cfg = YAML().load(
     open(
@@ -96,9 +85,9 @@ def main():
     model_dir = log_dir + "/model/"
     os.makedirs(model_dir, exist_ok=True)
 
-    ###############################################
+    #################################################
     ###############--SETUP CALLBACKS--###############
-    ###############################################
+    #################################################
 
     custom_callback = CustomCallback(trigg_freq=ENVIRONMENT_CHANGE_THRESHOLD)
     eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
@@ -106,6 +95,10 @@ def main():
                                  n_eval_episodes=10, deterministic=True)
     checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
                                              name_prefix='ppo_model')
+    #################################################
+    ###############--SETUP PPO-MODEL--###############
+    #################################################
+
     model = PPO(
         tensorboard_log=log_dir,
         policy="MultiInputPolicy",
