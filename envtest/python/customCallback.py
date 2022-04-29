@@ -1,16 +1,7 @@
-import os
-
-import numpy as np
-import time
-
 from flightgym import VisionEnv_v1
-import psutil
-from flightgym import VisionEnv_v1
-from ruamel.yaml import RoundTripDumper, YAML, dump
+
 from stable_baselines3.common.callbacks import BaseCallback
 import random
-# from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
-from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
 
 class CustomCallback(BaseCallback):

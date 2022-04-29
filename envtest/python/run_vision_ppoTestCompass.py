@@ -3,7 +3,7 @@ import argparse
 import glob
 import logging
 import os
-#
+
 import random
 
 import numpy as np
@@ -14,7 +14,6 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 
 from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
-# from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
 logging.basicConfig(level=logging.WARNING)
@@ -23,7 +22,7 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 100
+ENVIRONMENT_CHANGE_THRESHOLD = 250
 
 cfg = YAML().load(
     open(
