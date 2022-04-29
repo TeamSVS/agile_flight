@@ -74,6 +74,7 @@ class CustomCallback(BaseCallback):
         """
 
         if self.num_timesteps >= self.start_counter:
+
             diff = ["easy", "medium", "hard"]
             if self.start_counter < 500000:
                 new_diff = diff[0]
