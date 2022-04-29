@@ -3,7 +3,7 @@ import argparse
 import glob
 import logging
 import os
-#
+
 import random
 
 import numpy as np
@@ -15,7 +15,6 @@ import sys
 sys.path.insert(0, '/home/students/COMPASS-RL/icra22_competition_ws/src/agile_flight')
 from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
-# from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
 logging.basicConfig(level=logging.WARNING)
@@ -25,6 +24,7 @@ logging.basicConfig(level=logging.WARNING)
 ######################################
 
 ENVIRONMENT_CHANGE_THRESHOLD = 5000000000
+
 
 cfg = YAML().load(
     open(
@@ -56,7 +56,6 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-
     train_env = wrapper.FlightEnvVec(cfg, "train", "rgb")
 
     train_env.spawn_flightmare(10253, 10254)
