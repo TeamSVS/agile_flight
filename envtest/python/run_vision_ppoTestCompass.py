@@ -11,7 +11,8 @@ import torch
 from ruamel.yaml import YAML
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
-
+import sys
+sys.path.insert(0, '/home/students/COMPASS-RL/icra22_competition_ws/src/agile_flight')
 from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
 # from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
@@ -23,7 +24,7 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 100
+ENVIRONMENT_CHANGE_THRESHOLD = 5000000000
 
 cfg = YAML().load(
     open(
@@ -125,14 +126,14 @@ def main():
         vf_coef=0.75,  # OLD 0.5 Range 0.5-1
         max_grad_norm=0.5,
         clip_range=0.25,  # OLD 0.2
-        learning_rate=0.0003,  # OLD 0.0003 Range: 1e-5 - 1e-3
+        learning_rate=0.001,  # OLD 0.0003 Range: 1e-5 - 1e-3
         gae_lambda=0.9,  # OLD 95 Range 0.9-1
         use_sde=False,  # action noise exploration vs GsDSE(true)
         target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
         verbose=1,
         n_epochs=10,  # Range: 3 - 30
-        batch_size=64,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
-        n_steps=10,  # Ragne: 512-5000
+        batch_size=300,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+        n_steps=300,  # Ragne: 512-5000
 
         # env_cfg=cfg, OLD PPO
         # eval_env=train_env, OLD PPO
