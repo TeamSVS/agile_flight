@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 250
+ENVIRONMENT_CHANGE_THRESHOLD = 10000
 
 cfg = YAML().load(
     open(
@@ -54,7 +54,6 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-
     train_env = wrapper.FlightEnvVec(cfg, "train", "rgb")
 
     train_env.spawn_flightmare(10253, 10254)
@@ -130,7 +129,7 @@ def main():
         target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
         verbose=1,
         n_epochs=10,  # Range: 3 - 30
-        batch_size=64,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+        batch_size=10,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
         n_steps=10,  # Ragne: 512-5000
 
         # env_cfg=cfg, OLD PPO
