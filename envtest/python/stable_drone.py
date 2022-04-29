@@ -29,9 +29,9 @@ def main():
 
     # load configurations
     cfg = YAML().load(
-            open(
-                    os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
-            )
+        open(
+            os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
+        )
     )
 
     if args.render:
@@ -50,7 +50,7 @@ def main():
     env = VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
     env = wrapper.FlightEnvVec(env)
 
-    ep_length = 100
+    ep_length = 100000
 
     obs_dim = env.obs_dim
     act_dim = env.act_dim
@@ -62,58 +62,23 @@ def main():
     if args.render:
         env.connectUnity()
 
+    test = False
     for frame_id in range(ep_length):
         logging.info("Simuation step: {0}".format(frame_id))
         # generate dummmy action [-1, 1]
         dummy_actions = np.random.rand(num_env, act_dim) * 2 - np.ones(shape=(num_env, act_dim))
 
         # A standard OpenAI gym style interface for reinforcement learning.
+
+        dummy_actions[0][0] = -0.693
+        dummy_actions[0][1] = 0.  # ruota a destra
+        dummy_actions[0][2] = 0.  # ruota avanti
+        dummy_actions[0][3] = 0.  # su se stesso
+
         obs, rew, done, info = env.step(dummy_actions)
 
         #
         receive_frame_id = env.render(frame_id=frame_id)
-        logging.info("sending frame id: ", frame_id, "received frame id: ", receive_frame_id)
-
-        # ====== Retrive RGB Image From the simulator=========
-        raw_rgb_img = env.getImage(rgb=True)
-
-        num_img = raw_rgb_img.shape[0]
-        num_col = 1
-        num_row = int(num_img / num_col)
-
-        rgb_img_list = []
-        for col in range(num_col):
-            rgb_img_list.append([])
-            for row in range(num_row):
-                rgb_img = np.reshape(
-                        raw_rgb_img[col * num_row + row], (env.img_height, env.img_width, 3))
-                rgb_img_list[col] += [rgb_img]
-
-        rgb_img_tile = cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in rgb_img_list])
-        cv2.imshow("rgb_img", rgb_img_tile)
-        # cv2.imwrite("./images/img_{0:05d}.png".format(frame_id), rgb_img_tile)
-        # wait for the purpose of using open cv visualization
-        cv2.waitKey(500)
-
-        # ======Retrive Depth Image=========
-        raw_depth_images = env.getDepthImage()
-        depth_img_list = []
-        for col in range(num_col):
-            depth_img_list.append([])
-            for row in range(num_row):
-                depth_img = np.reshape(
-                        raw_depth_images[col * num_row + row], (env.img_height, env.img_width))
-                depth_img_list[col] += [depth_img]
-
-        depth_img_tile = cv2.vconcat([cv2.hconcat(im_list_h) for im_list_h in depth_img_list])
-        cv2.imshow("depth_img", depth_img_tile)
-        # wait for the purpose of using open cv visualization
-        cv2.waitKey(500)
-
-    logging.info(env.getImage())
-    #
-    if args.render:
-        env.disconnectUnity()
 
 
 if __name__ == "__main__":
