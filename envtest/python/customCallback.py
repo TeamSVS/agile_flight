@@ -1,16 +1,7 @@
-import os
-
-import numpy as np
-import time
-
 from flightgym import VisionEnv_v1
-import psutil
-from flightgym import VisionEnv_v1
-from ruamel.yaml import RoundTripDumper, YAML, dump
+
 from stable_baselines3.common.callbacks import BaseCallback
 import random
-# from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
-from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
 
 class CustomCallback(BaseCallback):
@@ -23,7 +14,7 @@ class CustomCallback(BaseCallback):
     def __init__(self, verbose=0, trigg_freq=0):
         super(CustomCallback, self).__init__(verbose)
         self.trigg_freq = trigg_freq
-        self.n_step = 0
+        self.start_counter = trigg_freq
         # Those variables will be accessible in the callback
         # (they are defined in the base class)
         # The RL model
@@ -66,19 +57,30 @@ class CustomCallback(BaseCallback):
         :return: (bool) If the callback returns False, training is aborted early.
         """
 
-        self.n_step += 1
         return True
 
     def _on_rollout_end(self) -> None:
         """
         This event is triggered before updating the policy.
         """
-        diff = ["easy", "medium", "hard"]
-        if self.n_step >= self.trigg_freq:
+
+        if self.num_timesteps >= self.start_counter:
+
+            diff = ["easy", "medium", "hard"]
+            if self.start_counter < 500000:
+                new_diff = diff[0]
+
+            elif 500000 < self.start_counter < 1500000:
+                new_diff = diff[1]
+            else:
+                new_diff = diff[2]
+
             new_lvl = random.randint(0, 100)
-            new_diff = diff[random.randint(0, 2)]
-            self.training_env.change_obstacles(level=new_lvl, difficult="medium")
-            self.n_step = 0
+
+            # new_lvl = random.randint(0, 100)
+            # new_diff = diff[random.randint(0, 2)]
+            self.training_env.change_obstacles(level=new_lvl, difficult=new_diff)
+            self.start_counter += self.trigg_freq
         pass
 
     def _on_training_end(self) -> None:

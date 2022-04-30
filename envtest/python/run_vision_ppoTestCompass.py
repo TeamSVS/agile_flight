@@ -1,32 +1,21 @@
 #!/usr/bin/env python3
 import argparse
-import math
-#
+import glob
+import logging
 import os
-import random
-import time
 
-import cv2
+import random
 
 import numpy as np
 import torch
-from flightgym import VisionEnv_v1
-from ruamel.yaml import YAML, RoundTripDumper, dump
-from stable_baselines3.common.utils import get_device
-from stable_baselines3.ppo.policies import MlpPolicy
-
-# from flightmare.flightpy.flightrl.rpg_baselines.torch.common.ppo import PPO
-from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
-from flightmare.flightpy.flightrl.rpg_baselines.torch.common.util import test_policy
-from threading import Thread
+from ruamel.yaml import YAML
 from stable_baselines3 import PPO
-from dronenavigation.models.compass.compass_model import CompassModel
-from customCallback import CustomCallback
-from threading import Thread
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
-import os
-import glob
-import logging
+import sys
+sys.path.insert(0, '/home/students/COMPASS-RL/icra22_competition_ws/src/agile_flight')
+from customCallback import CustomCallback
+from dronenavigation.models.compass.compass_model import CompassModel
+from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -34,7 +23,8 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 150
+ENVIRONMENT_CHANGE_THRESHOLD = 5000000000
+
 
 cfg = YAML().load(
     open(
@@ -66,11 +56,10 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-
     train_env = wrapper.FlightEnvVec(cfg, "train", "rgb")
+
     train_env.spawn_flightmare(10253, 10254)
     train_env.connectUnity()
-
     configure_random_seed(42, train_env)
 
     ###############################################
@@ -96,9 +85,9 @@ def main():
     model_dir = log_dir + "/model/"
     os.makedirs(model_dir, exist_ok=True)
 
-    ###############################################
+    #################################################
     ###############--SETUP CALLBACKS--###############
-    ###############################################
+    #################################################
 
     custom_callback = CustomCallback(trigg_freq=ENVIRONMENT_CHANGE_THRESHOLD)
     eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
@@ -106,6 +95,10 @@ def main():
                                  n_eval_episodes=10, deterministic=True)
     checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
                                              name_prefix='ppo_model')
+    #################################################
+    ###############--SETUP PPO-MODEL--###############
+    #################################################
+
     model = PPO(
         tensorboard_log=log_dir,
         policy="MultiInputPolicy",
@@ -132,14 +125,14 @@ def main():
         vf_coef=0.75,  # OLD 0.5 Range 0.5-1
         max_grad_norm=0.5,
         clip_range=0.25,  # OLD 0.2
-        learning_rate=0.0003,  # OLD 0.0003 Range: 1e-5 - 1e-3
+        learning_rate=0.001,  # OLD 0.0003 Range: 1e-5 - 1e-3
         gae_lambda=0.9,  # OLD 95 Range 0.9-1
         use_sde=False,  # action noise exploration vs GsDSE(true)
         target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
         verbose=1,
         n_epochs=10,  # Range: 3 - 30
-        batch_size=10,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
-        n_steps=10,  # Ragne: 512-5000
+        batch_size=300,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+        n_steps=300,  # Ragne: 512-5000
 
         # env_cfg=cfg, OLD PPO
         # eval_env=train_env, OLD PPO
