@@ -25,7 +25,9 @@ logging.basicConfig(level=logging.WARNING)
 ######################################
 
 ENVIRONMENT_CHANGE_THRESHOLD = 50000  # 50k
+
 MODE = "depth"  # depth,rgb,both
+
 cfg = YAML().load(
     open(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"

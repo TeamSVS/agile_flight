@@ -3,6 +3,15 @@ from flightgym import VisionEnv_v1
 from stable_baselines3.common.callbacks import BaseCallback
 import random
 
+import signal
+import numpy as np
+
+from stable_baselines3.common.callbacks import BaseCallback
+
+QUADSTATE_NAMES = ["0_pos_z", "1_pos_x", "2_pos_y", "3_att_w", "4_att_z", "5_att_x", "6_att_y", "7_vel_z", "8_vel_x",
+                   "9_vel_y", "10_ome_z", "11_ome_x", "12_ome_y"]
+QUADSTATE_RANGE = len(QUADSTATE_NAMES)
+
 
 class CustomCallback(BaseCallback):
     """
@@ -47,18 +56,6 @@ class CustomCallback(BaseCallback):
         """
         pass
 
-    def _on_step(self) -> bool:
-        """
-        This method will be called by the model after each call to `env.step()`.
-
-        For child callback (of an `EventCallback`), this will be called
-        when the event is triggered.
-
-        :return: (bool) If the callback returns False, training is aborted early.
-        """
-
-        return True
-
     def _on_rollout_end(self) -> None:
         """
         This event is triggered before updating the policy.
@@ -88,3 +85,52 @@ class CustomCallback(BaseCallback):
         This event is triggered before exiting the `learn()` method.
         """
         pass
+
+    def _init_callback(self) -> None:
+        self.drone_states = [[[] for _ in range(QUADSTATE_RANGE)] for _ in range(self.training_env.num_envs)]
+        self.total_speed = [[] for _ in range(self.training_env.num_envs)]
+
+    def _on_step(self) -> bool:
+        for drone_id in range(self.training_env.num_envs):
+            if self.locals["dones"][drone_id] == False:
+                for state_id in range(QUADSTATE_RANGE):
+                    self.drone_states[drone_id][state_id].append(self.training_env._quadstate[drone_id, state_id])
+                self.total_speed[drone_id].append(np.sum(np.abs(self.training_env._quadstate[drone_id, 7:10])))
+            else:
+                for state_id in range(QUADSTATE_RANGE):
+                    if len(self.drone_states[drone_id][state_id]) > 0:
+                        self.logger.record("state/" + QUADSTATE_NAMES[state_id] + "_max",
+                                           np.max(self.drone_states[drone_id][state_id]), exclude="stdout")
+                        self.logger.record("state/" + QUADSTATE_NAMES[state_id] + "_min",
+                                           np.min(self.drone_states[drone_id][state_id]), exclude="stdout")
+
+                if len(self.total_speed[drone_id]) > 0:
+                    self.logger.record("speed/" + "speed_max", np.max(self.total_speed[drone_id]))
+                    self.logger.record("speed/" + "speed_avg", np.mean(self.total_speed[drone_id]))
+                    self.logger.record("speed/" + "z_speed_avg", np.mean(self.drone_states[drone_id][7]),
+                                       exclude="stdout")
+                    self.logger.record("speed/" + "x_speed_avg", np.mean(self.drone_states[drone_id][8]),
+                                       exclude="stdout")
+                    self.logger.record("speed/" + "y_speed_avg", np.mean(self.drone_states[drone_id][9]),
+                                       exclude="stdout")
+
+                self.drone_states[drone_id] = [[] for _ in range(QUADSTATE_RANGE)]
+                self.total_speed[drone_id] = []
+
+        return True
+
+
+class HandleControlC(BaseCallback):
+    def __init__(self, verbose=0):
+        super(HandleControlC, self).__init__(verbose)
+        self.continue_training = True
+        signal.signal(signal.SIGINT, self.signal_handler)
+
+    def signal_handler(self, sig, frame):
+        print('Control-C detected.')
+        print('Ending training and saving model... Please wait.')
+        self.continue_training = False
+        self.training_env.controlC_flag = True
+
+    def _on_step(self) -> bool:
+        return self.continue_training
