@@ -12,6 +12,7 @@ from ruamel.yaml import YAML
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import sys
+
 sys.path.insert(0, '/home/students/COMPASS-RL/icra22_competition_ws/src/agile_flight')
 from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
@@ -23,8 +24,7 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 50000    # 50k
-
+ENVIRONMENT_CHANGE_THRESHOLD = 50000  # 50k
 
 cfg = YAML().load(
     open(
@@ -33,7 +33,7 @@ cfg = YAML().load(
 )
 
 
-def train_loop(model,callback="",log= 50, easy=1, medium=2, total=10):
+def train_loop(model, callback, log=50, easy=1, medium=2, total=10):
     diff = ["easy", "medium", "hard"]
     for total in range(10):
 
@@ -53,6 +53,7 @@ def train_loop(model,callback="",log= 50, easy=1, medium=2, total=10):
         model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, log_interval=log,
                     callback=callback)
     pass
+
 
 def configure_random_seed(seed, env=None):
     if env is not None:
@@ -164,13 +165,11 @@ def main():
     )
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
-    train_loop(model,callback=[custom_callback, eval_callback, checkpoint_callback],
-                log=5, easy=1,medium=2, total=10)
+    train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
+               log=5, easy=1, medium=2, total=10)
 
     logging.info("Train ended!!!")
 
 
 if __name__ == "__main__":
     main()
-
-
