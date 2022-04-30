@@ -12,6 +12,7 @@ from ruamel.yaml import YAML
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import sys
+
 sys.path.insert(0, '/home/students/COMPASS-RL/icra22_competition_ws/src/agile_flight')
 from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
@@ -23,9 +24,8 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 50000    # 50k
-
-
+ENVIRONMENT_CHANGE_THRESHOLD = 50000  # 50k
+MODE = "depth"  # depth,rgb,both
 cfg = YAML().load(
     open(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
@@ -33,7 +33,7 @@ cfg = YAML().load(
 )
 
 
-def train_loop(model,callback="",log= 50, easy=1, medium=2, total=10):
+def train_loop(model, callback="", log=50, easy=1, medium=2, total=10):
     diff = ["easy", "medium", "hard"]
     for total in range(10):
 
@@ -53,6 +53,7 @@ def train_loop(model,callback="",log= 50, easy=1, medium=2, total=10):
         model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, log_interval=log,
                     callback=callback)
     pass
+
 
 def configure_random_seed(seed, env=None):
     if env is not None:
@@ -77,7 +78,7 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-    train_env = wrapper.FlightEnvVec(cfg, "train", "depth")
+    train_env = wrapper.FlightEnvVec(cfg, "train", MODE)
 
     train_env.spawn_flightmare(10253, 10254)
     train_env.connectUnity()
@@ -125,7 +126,7 @@ def main():
         policy="MultiInputPolicy",
         policy_kwargs=dict(
             features_extractor_class=CompassModel,
-            features_extractor_kwargs=dict(linear_prob=True,
+            features_extractor_kwargs=dict(mode=MODE,
                                            pretrained_encoder_path=os.environ["COMPASS_CKPT"],
                                            feature_size=269),
             # features_extractor_class=SimpleCNNFE,
@@ -164,13 +165,11 @@ def main():
     )
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
-    train_loop(model,callback=[custom_callback, eval_callback, checkpoint_callback],
-                log=5, easy=1,medium=2, total=10)
+    train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
+               log=5, easy=1, medium=2, total=10)
 
     logging.info("Train ended!!!")
 
 
 if __name__ == "__main__":
     main()
-
-
