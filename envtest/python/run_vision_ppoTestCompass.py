@@ -28,6 +28,7 @@ ENVIRONMENT_CHANGE_THRESHOLD = 50000  # 50k
 
 MODE = "depth"  # depth,rgb,both
 
+FRAME = 3  # clip-length
 cfg = YAML().load(
     open(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
@@ -80,7 +81,7 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-    train_env = wrapper.FlightEnvVec(cfg, "train", MODE)
+    train_env = wrapper.FlightEnvVec(cfg, name="train", mode=MODE, n_frames=FRAME)
 
     train_env.spawn_flightmare(10253, 10254)
     train_env.connectUnity()
@@ -122,7 +123,9 @@ def main():
     #################################################
     ###############--SETUP PPO-MODEL--###############
     #################################################
-
+    number_feature = (256 + FRAME * 13)
+    pi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
+    vi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
     model = PPO(
         tensorboard_log=log_dir,
         policy="MultiInputPolicy",
@@ -130,12 +133,12 @@ def main():
             features_extractor_class=CompassModel,
             features_extractor_kwargs=dict(mode=MODE,
                                            pretrained_encoder_path=os.environ["COMPASS_CKPT"],
-                                           feature_size=269),
+                                           feature_size=number_feature),
             # features_extractor_class=SimpleCNNFE,
             # features_extractor_kwargs=dict(
             #        features_dim=256),
             activation_fn=torch.nn.ReLU,
-            net_arch=[269, dict(pi=[269, 134, 67], vf=[269, 134, 67])],
+            net_arch=[(256 + FRAME * 13), dict(pi=pi_arch, vf=vi_arch)],
             # Number hidden layer 1-3 TODO last layer?
             log_std_init=-0.5,
             normalize_images=False,
