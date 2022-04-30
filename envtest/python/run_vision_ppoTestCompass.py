@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 50
+ENVIRONMENT_CHANGE_THRESHOLD = 50000    # 50k
 
 
 cfg = YAML().load(
@@ -34,8 +34,9 @@ cfg = YAML().load(
 
 
 def train_loop(model,callback="",log= 50, easy=1, medium=2, total=10):
+    diff = ["easy", "medium", "hard"]
     for total in range(10):
-        diff = ["easy", "medium", "hard"]
+
         if total < easy:
             new_diff = diff[0]
 
@@ -76,7 +77,7 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-    train_env = wrapper.FlightEnvVec(cfg, "train", "rgb")
+    train_env = wrapper.FlightEnvVec(cfg, "train", "depth")
 
     train_env.spawn_flightmare(10253, 10254)
     train_env.connectUnity()
