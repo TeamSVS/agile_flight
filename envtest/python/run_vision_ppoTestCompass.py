@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.WARNING)
 ##########--COSTANT VALUES--##########
 ######################################
 
-ENVIRONMENT_CHANGE_THRESHOLD = 5000000000
+ENVIRONMENT_CHANGE_THRESHOLD = 50
 
 
 cfg = YAML().load(
@@ -32,6 +32,26 @@ cfg = YAML().load(
     )
 )
 
+
+def train_loop(model,callback="",log= 50, easy=1, medium=2, total=10):
+    for total in range(10):
+        diff = ["easy", "medium", "hard"]
+        if total < easy:
+            new_diff = diff[0]
+
+        elif easy <= total <= (easy + medium):
+            new_diff = diff[1]
+        else:
+            new_diff = diff[2]
+
+        new_lvl = random.randint(0, 100)
+
+        # new_lvl = random.randint(0, 100)
+        # new_diff = diff[random.randint(0, 2)]
+        model.get_env().change_obstacles(level=new_lvl, difficult=new_diff)  # )
+        model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, log_interval=log,
+                    callback=callback)
+    pass
 
 def configure_random_seed(seed, env=None):
     if env is not None:
@@ -141,12 +161,15 @@ def main():
         # gae_lambda=0.95,
 
     )
-
-    model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
-                callback=[custom_callback, eval_callback, checkpoint_callback])
+    # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
+    #             callback=[custom_callback, eval_callback, checkpoint_callback])
+    train_loop(model,callback=[custom_callback, eval_callback, checkpoint_callback],
+                log=5, easy=1,medium=2, total=10)
 
     logging.info("Train ended!!!")
 
 
 if __name__ == "__main__":
     main()
+
+
