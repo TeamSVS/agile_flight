@@ -63,24 +63,24 @@ class CustomCallback(BaseCallback):
         """
         This event is triggered before updating the policy.
         """
-
-        if self.num_timesteps >= self.start_counter:
-
-            diff = ["easy", "medium", "hard"]
-            if self.start_counter < 500000:
-                new_diff = diff[0]
-
-            elif 500000 < self.start_counter < 1500000:
-                new_diff = diff[1]
-            else:
-                new_diff = diff[2]
-
-            new_lvl = random.randint(0, 100)
-
-            # new_lvl = random.randint(0, 100)
-            # new_diff = diff[random.randint(0, 2)]
-            self.training_env.change_obstacles(level=new_lvl, difficult=new_diff)
-            self.start_counter += self.trigg_freq
+        #
+        # if self.num_timesteps >= self.start_counter:
+        #
+        #     diff = ["easy", "medium", "hard"]
+        #     if self.start_counter < 500000:
+        #         new_diff = diff[0]
+        #
+        #     elif 500000 < self.start_counter < 1500000:
+        #         new_diff = diff[1]
+        #     else:
+        #         new_diff = diff[2]
+        #
+        #     new_lvl = random.randint(0, 100)
+        #
+        #     # new_lvl = random.randint(0, 100)
+        #     # new_diff = diff[random.randint(0, 2)]
+        #     self.training_env.change_obstacles(level=new_lvl, difficult=new_diff)
+        #     self.start_counter += self.trigg_freq
         pass
 
     def _on_training_end(self) -> None:
