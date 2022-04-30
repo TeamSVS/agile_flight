@@ -42,11 +42,13 @@ class CompassModel(BaseFeaturesExtractor):
             for key in ckpt:
                 if key.startswith('backbone_rgb'):
                     ckpt_rgb[key.replace('backbone_rgb.', '')] = ckpt[key]
-                elif key.startswith('module.backbone'):
-                    ckpt_rgb[key.replace('module.backbone.', '')] = ckpt[key]
                 elif key.startswith('backbone_depth.'):
                     ckpt_depth[key.replace('backbone_depth.', '')] = ckpt[key]
+                elif key.startswith('module.backbone'):
+                    ckpt_rgb[key.replace('module.backbone.', '')] = ckpt[key]
+                    ckpt_depth[key.replace('backbone_depth.', '')] = ckpt[key]
             self.model_rgb.load_state_dict(ckpt_rgb)
+            self.model_depth.load_state_dict(ckpt_depth)
             logging.info('Successfully loaded pretrained checkpoint: {}.'.format(pretrained_path))
         else:
             logging.info('Train from scratch.')
