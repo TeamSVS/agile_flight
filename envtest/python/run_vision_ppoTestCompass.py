@@ -35,6 +35,8 @@ cfg = YAML().load(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
     )
 )
+starting_val = ENVIRONMENT_CHANGE_THRESHOLD * 20
+TOT = ENVIRONMENT_CHANGE_THRESHOLD * 20
 
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:
@@ -53,7 +55,10 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
         :param progress_remaining:
         :return: current learning rate
         """
-        return progress_remaining * initial_value
+        global starting_val
+        print(starting_val)
+        starting_val -= 1
+        return (TOT / starting_val) * initial_value
 
     return func
 
@@ -170,7 +175,7 @@ def main():
         ),
 
         env=train_env,
-        gamma=0.98,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
+        gamma=0.99,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
         seed=args.seed,
         ent_coef=0.002,  # Range:  0 - 0.01
         vf_coef=0.75,  # OLD 0.5 Range 0.5-1
@@ -182,8 +187,8 @@ def main():
         target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
         verbose=1,
         n_epochs=10,  # Range: 3 - 30
-        batch_size=300,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
-        n_steps=300,  # Ragne: 512-5000
+        batch_size=600,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+        n_steps=200,  # Ragne: 512-5000
 
         # env_cfg=cfg, OLD PPO
         # eval_env=train_env, OLD PPO
