@@ -5,6 +5,7 @@ import logging
 import os
 
 import random
+from typing import Callable
 
 import numpy as np
 import torch
@@ -34,6 +35,27 @@ cfg = YAML().load(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
     )
 )
+
+
+def linear_schedule(initial_value: float) -> Callable[[float], float]:
+    """
+    Linear learning rate schedule.
+
+    :param initial_value: Initial learning rate.
+    :return: schedule that computes
+      current learning rate depending on remaining progress
+    """
+
+    def func(progress_remaining: float) -> float:
+        """
+        Progress will decrease from 1 (beginning) to 0.
+
+        :param progress_remaining:
+        :return: current learning rate
+        """
+        return progress_remaining * initial_value
+
+    return func
 
 
 def train_loop(model, callback, log=50, easy=1, medium=2, total=10):
@@ -125,6 +147,7 @@ def main():
     number_feature = (256 + FRAME * 13)
     pi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
     vi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
+
     model = PPO(
         tensorboard_log=log_dir,
         policy="MultiInputPolicy",
@@ -153,7 +176,7 @@ def main():
         vf_coef=0.75,  # OLD 0.5 Range 0.5-1
         max_grad_norm=0.5,
         clip_range=0.25,  # OLD 0.2
-        learning_rate=0.001,  # OLD 0.0003 Range: 1e-5 - 1e-3
+        learning_rate=linear_schedule(0.001),  # OLD 0.0003 Range: 1e-5 - 1e-3
         gae_lambda=0.9,  # OLD 95 Range 0.9-1
         use_sde=False,  # action noise exploration vs GsDSE(true)
         target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
