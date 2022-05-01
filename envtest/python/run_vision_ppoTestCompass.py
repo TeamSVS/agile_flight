@@ -36,14 +36,14 @@ cfg = YAML().load(
 )
 
 
-def train_loop(model, callback="", log=50, easy=1, medium=2, total=10):
+def train_loop(model, callback, log=50, easy=1, medium=2, total=10):
     diff = ["easy", "medium", "hard"]
-    for total in range(10):
+    for unit in range(total):
 
-        if total < easy:
+        if unit < easy:
             new_diff = diff[0]
 
-        elif easy <= total <= (easy + medium):
+        elif easy <= unit <= (easy + medium):
             new_diff = diff[1]
         else:
             new_diff = diff[2]
@@ -55,7 +55,6 @@ def train_loop(model, callback="", log=50, easy=1, medium=2, total=10):
         model.get_env().change_obstacles(level=new_lvl, difficult=new_diff)  # )
         model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, log_interval=log,
                     callback=callback)
-    pass
 
 
 def configure_random_seed(seed, env=None):
