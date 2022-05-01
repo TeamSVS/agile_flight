@@ -142,7 +142,9 @@ def main():
             # Number hidden layer 1-3 TODO last layer?
             log_std_init=-0.5,
             normalize_images=False,
-            # optimizer_kwargs=dict(weight_decay=0, betas=0.9),  # Adam optimizer TODO
+            optimizer_kwargs=dict(weight_decay=0, betas=(0.9, 0.999), eps=1e-08, amsgrad=False, maximize=False),
+            # Adam optimizer TODO
+            optimizer_class=torch.optim.Adam
         ),
 
         env=train_env,
