@@ -36,8 +36,8 @@ cfg = YAML().load(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
     )
 )
-starting_val = ENVIRONMENT_CHANGE_THRESHOLD * 20
-TOT = ENVIRONMENT_CHANGE_THRESHOLD * 20
+
+
 
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:
@@ -56,10 +56,8 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
         :param progress_remaining:
         :return: current learning rate
         """
-        global starting_val
-        print(starting_val)
-        starting_val -= 1
-        return (TOT / starting_val) * initial_value
+
+        return  0.9995 * initial_value
 
     return func
 
@@ -207,7 +205,7 @@ def main():
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
     train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
-               log=5, easy=1, medium=2, total=10)
+               log=5, easy=2, medium=20, total=50)
 
     logging.info("Train ended!!!")
 
