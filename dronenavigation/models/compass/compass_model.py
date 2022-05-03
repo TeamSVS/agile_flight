@@ -62,7 +62,8 @@ class CompassModel(BaseFeaturesExtractor):
         logging.info("_")
         # x: B, C, SL, H, W
         # concat order: state-rgb-depth
-
+        x["state"] = x["state"].flatten(0,1)
+        x["depth"] = x["depth"].flatten(0,1)
         tensor_concat = x["state"].flatten(1, 2)
 
         if "rgb" in x:
