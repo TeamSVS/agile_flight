@@ -26,10 +26,10 @@ logging.basicConfig(level=logging.WARNING)
 ######################################
 
 
-ENVIRONMENT_CHANGE_THRESHOLD = 50000
+ENVIRONMENT_CHANGE_THRESHOLD = 300
 
 MODE = "depth"  # depth,rgb,both
-
+STARTING_LR = 0.001  # clip-length
 FRAME = 3  # clip-length
 cfg = YAML().load(
     open(
@@ -37,7 +37,7 @@ cfg = YAML().load(
     )
 )
 
-
+actual_lr = STARTING_LR
 
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:
@@ -56,8 +56,10 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
         :param progress_remaining:
         :return: current learning rate
         """
+        global actual_lr
+        actual_lr = actual_lr * 0.9995
 
-        return  0.9995 * initial_value
+        return actual_lr
 
     return func
 
@@ -78,9 +80,14 @@ def train_loop(model, callback, log=50, easy=1, medium=2, total=10):
 
         # new_lvl = random.randint(0, 100)
         # new_diff = diff[random.randint(0, 2)]
-        model.get_env().change_obstacles(level=new_lvl, difficult=new_diff)  # )
         model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, log_interval=log,
                     callback=callback)
+
+        model.get_env().change_obstacles(level=new_lvl, difficult=new_diff)  # )
+
+
+#        model._last_obs = "new_obs" #TODO prof suggstion
+#        model._last_episode_starts = "dones"#TODO
 
 
 def configure_random_seed(seed, env=None):
@@ -156,7 +163,7 @@ def main():
     if args.load:
         load_path = semipath + "/PPO_" + args.load + "/best_model/best_model.zip"
         model = PPO.load(load_path, env=train_env, device='cuda:0', custom_objects=None, print_system_info=True,
-                     force_reset=True)
+                         force_reset=True)
     else:
         model = PPO(
             tensorboard_log=log_dir,
@@ -186,7 +193,7 @@ def main():
             vf_coef=0.75,  # OLD 0.5 Range 0.5-1
             max_grad_norm=0.5,
             clip_range=0.25,  # OLD 0.2
-            learning_rate=linear_schedule(0.001),  # OLD 0.0003 Range: 1e-5 - 1e-3
+            learning_rate=linear_schedule(STARTING_LR),  # OLD 0.0003 Range: 1e-5 - 1e-3
             gae_lambda=0.9,  # OLD 95 Range 0.9-1
             use_sde=False,  # action noise exploration vs GsDSE(true)
             target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
