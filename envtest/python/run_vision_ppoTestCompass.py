@@ -83,11 +83,9 @@ def train_loop(model, callback, log=50, easy=1, medium=2, total=10):
         model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, log_interval=log,
                     callback=callback)
 
-        model.get_env().change_obstacles(level=new_lvl, difficult=new_diff)  # )
-
-
-#        model._last_obs = "new_obs" #TODO prof suggstion
-#        model._last_episode_starts = "dones"#TODO
+        obs = model.get_env().change_obstacles(level=new_lvl, difficult=new_diff)  # )
+        model._last_obs = obs
+        model._last_episode_starts = np.full([model.get_env().num_envs], False)
 
 
 def configure_random_seed(seed, env=None):

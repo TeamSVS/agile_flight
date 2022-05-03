@@ -50,7 +50,7 @@ def main():
     env = VisionEnv_v1(dump(cfg, Dumper=RoundTripDumper), False)
     env = wrapper.FlightEnvVec(env)
 
-    ep_length = 100000
+    ep_length = 1000000
 
     obs_dim = env.obs_dim
     act_dim = env.act_dim
@@ -70,13 +70,13 @@ def main():
 
         # A standard OpenAI gym style interface for reinforcement learning.
 
-        dummy_actions[0][0] = -0.693
-        dummy_actions[0][1] = 0.  # ruota a destra
+        dummy_actions[0][0] = -0.697
+        dummy_actions[0][1] = 0  # ruota a destra
         dummy_actions[0][2] = 0.  # ruota avanti
-        dummy_actions[0][3] = 0.  # su se stesso
+        dummy_actions[0][3] = 0  # su se stesso
 
         obs, rew, done, info = env.step(dummy_actions)
-
+        print(env.getQuadState()[0][12:13])  # 0-1,5-6, 6-7
         #
         receive_frame_id = env.render(frame_id=frame_id)
 
