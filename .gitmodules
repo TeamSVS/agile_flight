@@ -13,3 +13,6 @@
 	path = dodgedrone_simulation
 	url = https://github.com/uzh-rpg/dodgedrone_simulation.git
 	branch = main
+[submodule "rl-baselines3-zoo"]
+	path = rl-baselines3-zoo
+	url = git@github.com:DLR-RM/rl-baselines3-zoo.git
