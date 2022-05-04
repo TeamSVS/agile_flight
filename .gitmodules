@@ -15,4 +15,4 @@
 	branch = main
 [submodule "rl-baselines3-zoo"]
 	path = rl-baselines3-zoo
-	url = git@github.com:DLR-RM/rl-baselines3-zoo.git
+	url = git@github.com:TeamSVS/rl-baselines3-zoo.git
