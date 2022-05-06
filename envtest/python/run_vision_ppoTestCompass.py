@@ -146,7 +146,7 @@ def main():
 
     custom_callback = CustomCallback(trigg_freq=ENVIRONMENT_CHANGE_THRESHOLD)
     eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
-                                 log_path=tensorboard_dir, eval_freq=6000,
+                                 log_path=tensorboard_dir, eval_freq=int(ENVIRONMENT_CHANGE_THRESHOLD / 10),
                                  n_eval_episodes=10, deterministic=True)
     checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
                                              name_prefix='ppo_model')
