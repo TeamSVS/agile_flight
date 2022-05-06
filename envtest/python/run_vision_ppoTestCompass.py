@@ -28,9 +28,7 @@ logging.basicConfig(level=logging.WARNING)
 
 ENVIRONMENT_CHANGE_THRESHOLD = 300
 
-MODE = "depth"  # depth,rgb,both
 STARTING_LR = 0.001  # clip-length
-FRAME = 3  # clip-length
 cfg = YAML().load(
     open(
         os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
@@ -99,11 +97,11 @@ def configure_random_seed(seed, env=None):
 def parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--train", type=int, default=1, help="Train the policy or evaluate the policy")
-    parser.add_argument("--render", type=int, default=0, help="Render with Unity")
-    parser.add_argument("--trial", type=int, default=1, help="PPO trial number")
-    parser.add_argument("--iter", type=int, default=100, help="PPO iter number")
-    parser.add_argument("--load", type=str, default="", help="load and train an existing model.")
+    parser.add_argument("--iport", type=int, default=10277, help="Input port for simulation")
+    parser.add_argument("--oport", type=int, default=10278, help="Output port for simulation")
+    parser.add_argument("--nframe", type=int, default=3, help="Number of frame")
+    parser.add_argument("--load", type=str, default=None, help="load and train an existing model.")
+    parser.add_argument("--mode", type=str, default="depth", help="the compass net input")  # depth,rgb,both
     parser.add_argument("--gpu", type=int, default=None, help="the gpu used by torch")
     return parser
 
@@ -113,11 +111,11 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-    train_env = wrapper.FlightEnvVec(cfg, name="train", mode=MODE, n_frames=FRAME)
+    train_env = wrapper.FlightEnvVec(cfg, name="train", mode=args.mode, n_frames=args.nframe, in_port=args.iport,
+                                     out_port=args.oport)
 
-    train_env.spawn_flightmare(10253, 10254)
     train_env.connectUnity()
-    configure_random_seed(42, train_env)
+    configure_random_seed(args.seed, train_env)
 
     ###############################################
     ###############--SETUP FOLDERS--###############
@@ -156,7 +154,7 @@ def main():
     ###############--SETUP PPO-MODEL--###############
     #################################################
 
-    number_feature = (256 + FRAME * 13)
+    number_feature = (256 + args.nframe * 13)
     pi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
     vi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
 
@@ -164,7 +162,7 @@ def main():
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = "{}".format(args.gpu)
 
-    if args.load:
+    if args.load is not None:
         load_path = semipath + "/PPO_" + args.load + "/best_model/best_model.zip"
         model = PPO.load(load_path, env=train_env, device=("cuda:{0}".format(args.gpu)), custom_objects=None,
                          print_system_info=True,
@@ -175,14 +173,14 @@ def main():
             policy="MultiInputPolicy",
             policy_kwargs=dict(
                 features_extractor_class=CompassModel,
-                features_extractor_kwargs=dict(mode=MODE,
+                features_extractor_kwargs=dict(mode=args.mode,
                                                pretrained_encoder_path=os.environ["COMPASS_CKPT"],
                                                feature_size=number_feature),
                 # features_extractor_class=SimpleCNNFE,
                 # features_extractor_kwargs=dict(
                 #        features_dim=256),
                 activation_fn=torch.nn.ReLU,
-                net_arch=[(256 + FRAME * 13), dict(pi=pi_arch, vf=vi_arch)],
+                net_arch=[(256 + args.nframe * 13), dict(pi=pi_arch, vf=vi_arch)],
                 # Number hidden layer 1-3 TODO last layer?
                 log_std_init=-0.5,
                 normalize_images=False,
