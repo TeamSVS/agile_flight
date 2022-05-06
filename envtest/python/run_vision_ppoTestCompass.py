@@ -80,7 +80,7 @@ def train_loop(model, callback, log=50, easy=1, medium=2, total=10):
 
         # new_lvl = random.randint(0, 100)
         # new_diff = diff[random.randint(0, 2)]
-        model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, log_interval=log,
+        model.learn(total_timesteps=ENVIRONMENT_CHANGE_THRESHOLD, reset_num_timesteps=False, log_interval=log,
                     callback=callback)
 
         obs = model.get_env().change_obstacles(level=new_lvl, difficult=new_diff)  # )
@@ -104,6 +104,7 @@ def parser():
     parser.add_argument("--trial", type=int, default=1, help="PPO trial number")
     parser.add_argument("--iter", type=int, default=100, help="PPO iter number")
     parser.add_argument("--load", type=str, default="", help="load and train an existing model.")
+    parser.add_argument("--gpu", type=int, default=None, help="the gpu used by torch")
     return parser
 
 
@@ -158,9 +159,15 @@ def main():
     number_feature = (256 + FRAME * 13)
     pi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
     vi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
+
+    if args.gpu is not None:
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+        os.environ["CUDA_VISIBLE_DEVICES"] = "{}".format(args.gpu)
+
     if args.load:
         load_path = semipath + "/PPO_" + args.load + "/best_model/best_model.zip"
-        model = PPO.load(load_path, env=train_env, device='cuda:0', custom_objects=None, print_system_info=True,
+        model = PPO.load(load_path, env=train_env, device=("cuda:{0}".format(args.gpu)), custom_objects=None,
+                         print_system_info=True,
                          force_reset=True)
     else:
         model = PPO(

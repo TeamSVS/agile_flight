@@ -31,13 +31,8 @@ class CompassModel(BaseFeaturesExtractor):
 
     def load_pretrained_encoder_weights(self, pretrained_path):
         if pretrained_path:
-            if torch.cuda.is_available():
-                logging.info("Compass CUDA")
-                ckpt = torch.load(pretrained_path)['state_dict']  # COMPASS checkpoint format.
-            else:
-                logging.info("Compass CPU")
-                ckpt = torch.load(pretrained_path, map_location=torch.device('cpu'))['state_dict']
-
+            map_location = torch.device('cpu') if not torch.cuda.is_available() else None
+            ckpt = torch.load(pretrained_path, map_location=map_location)['state_dict']  # COMPASS checkpoint format.
             ckpt_rgb = {}
             ckpt_depth = {}
             for key in ckpt:
