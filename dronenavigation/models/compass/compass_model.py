@@ -30,6 +30,7 @@ class CompassModel(BaseFeaturesExtractor):
             param.requires_grad = False  # not update by gradient
 
     def load_pretrained_encoder_weights(self, pretrained_path):
+        pretrained_path = "/home/students/COMPASS-RL/compass-model.pth.tar"
         if pretrained_path:
             if torch.cuda.is_available():
                 logging.info("Compass CUDA")
