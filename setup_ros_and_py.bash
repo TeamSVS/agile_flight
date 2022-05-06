@@ -16,7 +16,7 @@ catkin config --merge-devel
 catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-fdiagnostics-color
 
 cd src
-git clone https://github.com/MichaelBosello/agile_flight.git
+git clone git@github.com:TeamSVS/agile_flight.git
 
 
 cd agile_flight

@@ -14,7 +14,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import sys
 
-sys.path.insert(0, '/home/students/COMPASS-RL/icra22_competition_ws/src/agile_flight')
+# sys.path.insert(0, '/home/students/COMPASS-RL/icra22_competition_ws/src/agile_flight')
 from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
