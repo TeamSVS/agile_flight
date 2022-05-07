@@ -33,6 +33,8 @@ def main():
             os.environ["FLIGHTMARE_PATH"] + "/flightpy/configs/vision/config.yaml", "r"
         )
     )
+    cfg["unity"]["input_port"] = 10253
+    cfg["unity"]["output_port"] = 10253
 
     if args.render:
         # to connect unity
