@@ -42,7 +42,7 @@ RGB_CHANNELS = 3
 mode = "depth"
 num_envs = 1
 img_height = cfg["rgb_camera"]["height"]
-img_width = ["rgb_camera"]["width"]
+img_width = cfg["rgb_camera"]["width"]
 n_frames = 3
 
 def _normalize_img(obs: np.ndarray) -> np.ndarray:
