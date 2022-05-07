@@ -7,7 +7,7 @@ import logging
 import cv2
 import numpy as np
 from flightgym import VisionEnv_v1
-from rpg_baselines.torch.envs import vec_env_wrapper as wrapper
+from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper_old as wrapper
 from ruamel.yaml import YAML, RoundTripDumper, dump
 
 
@@ -73,10 +73,10 @@ def main():
         dummy_actions[0][0] = -0.697
         dummy_actions[0][1] = 0  # ruota a destra
         dummy_actions[0][2] = 0.  # ruota avanti
-        dummy_actions[0][3] = 0  # su se stesso
+        dummy_actions[0][3] = 0.2  # su se stesso
 
         obs, rew, done, info = env.step(dummy_actions)
-        print(env.getQuadState()[0][12:13])  # 0-1,5-6, 6-7
+        # print(env.getQuadState()[0][12:13])  # 0-1,5-6, 6-7
         #
         receive_frame_id = env.render(frame_id=frame_id)
 
