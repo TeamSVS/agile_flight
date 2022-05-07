@@ -6,7 +6,7 @@ from utils import AgileCommandMode, AgileCommand
 from rl_example import rl_example
 
 
-def compute_command_vision_based(state, img):
+def compute_command_vision_based(state, img, rl_model):
     ################################################
     # !!! Begin of user code !!!
     # TODO: populate the command message
@@ -56,7 +56,7 @@ def compute_command_state_based(state, obstacles, rl_policy=None):
     command = AgileCommand(command_mode)
     command.t = state.t
     command.rotor_thrusts = [1.0, 1.0, 1.0, 1.0]
- 
+
     # Example of CTBR command
     command_mode = 1
     command = AgileCommand(command_mode)

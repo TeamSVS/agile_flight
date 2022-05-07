@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse
+import logging
 
 import rospy
 from dodgeros_msgs.msg import Command
@@ -7,6 +8,7 @@ from dodgeros_msgs.msg import QuadState
 from cv_bridge import CvBridge
 from geometry_msgs.msg import TwistStamped
 from sensor_msgs.msg import Image
+from stable_baselines3 import PPO
 from std_msgs.msg import Empty
 
 from envsim_msgs.msg import ObstacleArray
@@ -15,17 +17,26 @@ from user_code import compute_command_vision_based, compute_command_state_based
 from utils import AgileCommandMode, AgileQuadState
 
 
+class CompassRl:
+    def __init__(self, model_path, cuda_device=0):
+        self.model = PPO.load(model_path, env=None, device=("cuda:{0}".format(cuda_device)), custom_objects=None,
+                              print_system_info=True)
+
+    def predict(self):
+        self.model.predict()
+
+
 class AgilePilotNode:
-    def __init__(self, vision_based=False, ppo_path=None):
+    def __init__(self, vision_based=False, m_path=None, gpu=0):
         print("Initializing agile_pilot_node...")
         rospy.init_node('agile_pilot_node', anonymous=False)
 
         self.vision_based = vision_based
-        self.ppo_path = ppo_path 
+        self.m_path = m_path
         self.publish_commands = False
         self.cv_bridge = CvBridge()
         self.state = None
-
+        self.model = CompassRl(self.m_path, gpu)
         quad_name = 'kingfisher'
 
         # Logic subscribers
@@ -38,8 +49,8 @@ class AgilePilotNode:
 
         self.img_sub = rospy.Subscriber("/" + quad_name + "/dodgeros_pilot/unity/depth", Image, self.img_callback,
                                         queue_size=1, tcp_nodelay=True)
-        self.obstacle_sub = rospy.Subscriber("/" + quad_name + "/dodgeros_pilot/groundtruth/obstacles", ObstacleArray,
-                                             self.obstacle_callback, queue_size=1, tcp_nodelay=True)
+        # self.obstacle_sub = rospy.Subscriber("/" + quad_name + "/dodgeros_pilot/groundtruth/obstacles", ObstacleArray,
+        #                                     self.obstacle_callback, queue_size=1, tcp_nodelay=True)
 
         # Command publishers
         self.cmd_pub = rospy.Publisher("/" + quad_name + "/dodgeros_pilot/feedthrough_command", Command, queue_size=1)
@@ -53,7 +64,8 @@ class AgilePilotNode:
         if self.state is None:
             return
         cv_image = self.cv_bridge.imgmsg_to_cv2(img_data, desired_encoding='passthrough')
-        command = compute_command_vision_based(self.state, cv_image)
+        command = compute_command_vision_based(self.state, cv_image, rl_model=self.model)
+
         self.publish_command(command)
 
     def state_callback(self, state_data):
@@ -65,8 +77,8 @@ class AgilePilotNode:
         if self.state is None:
             return
         rl_policy = None
-        if self.ppo_path is not None:
-            rl_policy = load_rl_policy(self.ppo_path)
+        if self.m_path is not None:
+            rl_policy = load_rl_policy(self.m_path)
         command = compute_command_state_based(state=self.state, obstacles=obs_data, rl_policy=rl_policy)
         self.publish_command(command)
 
@@ -118,8 +130,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Agile Pilot.')
     parser.add_argument('--vision_based', help='Fly vision-based', required=False, dest='vision_based',
                         action='store_true')
-    parser.add_argument('--ppo_path', help='PPO neural network policy', required=False,  default=None)
-
+    parser.add_argument('--m_path', help='Neural network model to load', type=str, required=True, default=None)
+    parser.add_argument('--gpu', help='The gpu used for the rl model', type=int, required=False, default=0)
     args = parser.parse_args()
-    agile_pilot_node = AgilePilotNode(vision_based=args.vision_based, ppo_path=args.ppo_path)
+    agile_pilot_node = AgilePilotNode(vision_based=args.vision_based, m_path=args.m_path, gpu=args.gpu)
     rospy.spin()
