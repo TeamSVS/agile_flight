@@ -34,7 +34,7 @@ def main():
         )
     )
     cfg["unity"]["input_port"] = 10253
-    cfg["unity"]["output_port"] = 10253
+    cfg["unity"]["output_port"] = 10254
 
     if args.render:
         # to connect unity
