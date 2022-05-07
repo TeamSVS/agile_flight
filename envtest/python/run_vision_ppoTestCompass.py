@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.WARNING)
 ######################################
 
 
-ENVIRONMENT_CHANGE_THRESHOLD = 300
+ENVIRONMENT_CHANGE_THRESHOLD = 50000 # 50000
 
 STARTING_LR = 0.001  # clip-length
 cfg = YAML().load(
@@ -55,7 +55,7 @@ def linear_schedule(initial_value: float) -> Callable[[float], float]:
         :return: current learning rate
         """
         global actual_lr
-        actual_lr = actual_lr * 0.9995
+        actual_lr = actual_lr * 0.9995 + 0.000001
 
         return actual_lr
 
