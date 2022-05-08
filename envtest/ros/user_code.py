@@ -15,29 +15,12 @@ def compute_command_vision_based(state, img, rl_model):
     # print(state)
     # print("Image shape: ", img.shape)
 
-    # Example of SRT command
-    command_mode = 0
-    command = AgileCommand(command_mode)
-    command.t = state.t
-    command.rotor_thrusts = [1.0, 1.0, 1.0, 1.0]
-
     # Example of CTBR command
     command_mode = 1
     command = AgileCommand(command_mode)
     command.t = state.t
     command.collective_thrust = 15.0
     command.bodyrates = [0.0, 0.0, 0.0]
-
-    # Example of LINVEL command (velocity is expressed in world frame)
-    command_mode = 2
-    command = AgileCommand(command_mode)
-    command.t = state.t
-    command.velocity = [1.0, 0.0, 0.0]
-    command.yawrate = 0.0
-
-    ################################################
-    # !!! End of user code !!!
-    ################################################
 
     return command
 

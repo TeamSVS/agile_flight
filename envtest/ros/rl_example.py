@@ -42,7 +42,7 @@ def rl_example(state, obstacles, rl_policy=None):
     norm_obs = normalize_obs(obs, obs_mean, obs_var)
     #  compute action
     action, _ = policy.predict(norm_obs, deterministic=True)
-    action = (action * act_std + act_mean)[0, :]
+    action = (action * act_std + act_mean)[0, :]  # questa
 
     command_mode = 1
     command = AgileCommand(command_mode)
@@ -66,4 +66,4 @@ def load_rl_policy(policy_path):
     act_std = np.array([thrust_max / quad_mass / 2, \
                         omega_max[0], omega_max[1], omega_max[2]])[np.newaxis, :]
 
-    return obs_mean, obs_var, act_mean, act_std
+    return policy, obs_mean, obs_var, act_mean, act_std
