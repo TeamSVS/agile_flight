@@ -196,7 +196,7 @@ def main():
             vf_coef=0.75,  # OLD 0.5 Range 0.5-1
             max_grad_norm=0.5,
             clip_range=0.25,  # OLD 0.2
-            learning_rate=linear_schedule(STARTING_LR),  # OLD 0.0003 Range: 1e-5 - 1e-3
+            learning_rate=0.0002,  # OLD 0.0003 Range: 1e-5 - 1e-3
             gae_lambda=0.9,  # OLD 95 Range 0.9-1
             use_sde=False,  # action noise exploration vs GsDSE(true)
             target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
@@ -215,7 +215,7 @@ def main():
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
     train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
-               log=5, easy=2, medium=20, total=50)
+               log=5, easy=2, medium=20, total=70)
 
     logging.info("Train ended!!!")
 
