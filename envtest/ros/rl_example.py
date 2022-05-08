@@ -42,7 +42,7 @@ def rl_example(state, obstacles, rl_policy=None):
     norm_obs = normalize_obs(obs, obs_mean, obs_var)
     #  compute action
     action, _ = policy.predict(norm_obs, deterministic=True)
-    action = (action * act_std + act_mean)[0, :]  # questa
+    action = (action * act_std + act_mean)[0, :]
 
     command_mode = 1
     command = AgileCommand(command_mode)
@@ -53,6 +53,8 @@ def rl_example(state, obstacles, rl_policy=None):
 
 
 def load_rl_policy(policy_path):
+    policy_dir = policy_path + "/Policy/iter_00500.pth"
+    rms_dir = policy_path + "/RMS/iter_00500.npz"
     cfg_dir = policy_path + "/config.yaml"
 
     # action 
@@ -65,5 +67,20 @@ def load_rl_policy(policy_path):
     act_mean = np.array([thrust_max / quad_mass / 2, 0.0, 0.0, 0.0])[np.newaxis, :]
     act_std = np.array([thrust_max / quad_mass / 2, \
                         omega_max[0], omega_max[1], omega_max[2]])[np.newaxis, :]
+
+    rms_data = np.load(rms_dir)
+    obs_mean = np.mean(rms_data["mean"], axis=0)
+    obs_var = np.mean(rms_data["var"], axis=0)
+
+    # # -- load saved varaiables 
+    device = get_device("auto")
+    saved_variables = torch.load(policy_dir, map_location=device)
+    # Create policy object
+    policy = MlpPolicy(**saved_variables["data"])
+    #
+    policy.action_net = torch.nn.Sequential(policy.action_net, torch.nn.Tanh())
+    # Load weights
+    policy.load_state_dict(saved_variables["state_dict"], strict=False)
+    policy.to(device)
 
     return policy, obs_mean, obs_var, act_mean, act_std

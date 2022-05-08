@@ -7,15 +7,15 @@ from rl_example import rl_example
 
 
 def compute_command_vision_based(state, img, rl_model):
-    ################################################
-    # !!! Begin of user code !!!
-    # TODO: populate the command message
-    ################################################
     print("Computing command vision-based!")
     # print(state)
     # print("Image shape: ", img.shape)
+    # state.t,state.pos,state.att,state.vel,state.omega
 
+    # rl_model.predict()
     # Example of CTBR command
+    # print(state.shape)
+    print(img.shape)
     command_mode = 1
     command = AgileCommand(command_mode)
     command.t = state.t
