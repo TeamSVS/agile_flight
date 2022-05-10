@@ -8,10 +8,15 @@ from rl_example import rl_example
 
 def compute_command_vision_based(state, img, rl_model):
     print("Computing command vision-based!")
+    new_state = []
+    state_elem = [state.pos, state.att, state.vel, state.omega]
+    new_state.append(state.t)
+    for el in state_elem:
+        new_state.extend(el)
+
     # print(state)
     # print("Image shape: ", img.shape)
     # state.t,state.pos,state.att,state.vel,state.omega
-
     # rl_model.predict()
     # Example of CTBR command
     # print(state.shape)
