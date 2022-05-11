@@ -179,8 +179,8 @@ def main():
                 # features_extractor_class=SimpleCNNFE,
                 # features_extractor_kwargs=dict(
                 #        features_dim=256),
-                activation_fn=torch.nn.ReLU,
-                net_arch=[(256 + args.nframe * 13), dict(pi=pi_arch, vf=vi_arch)],
+                activation_fn=torch.nn.Tanh,
+                net_arch=[ dict(pi=pi_arch, vf=vi_arch)],
                 # Number hidden layer 1-3 TODO last layer?
                 log_std_init=-0.5,
                 normalize_images=False,
@@ -190,20 +190,20 @@ def main():
             ),
 
             env=train_env,
-            gamma=0.99,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
+            gamma=0.999,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
             seed=args.seed,
             ent_coef=0.002,  # Range:  0 - 0.01
             vf_coef=0.75,  # OLD 0.5 Range 0.5-1
             max_grad_norm=0.5,
-            clip_range=0.25,  # OLD 0.2
-            learning_rate=0.0002,  # OLD 0.0003 Range: 1e-5 - 1e-3
+            clip_range=0.35,  # OLD 0.2
+            learning_rate=0.0003,  # OLD 0.0003 Range: 1e-5 - 1e-3
             gae_lambda=0.9,  # OLD 95 Range 0.9-1
             use_sde=False,  # action noise exploration vs GsDSE(true)
             target_kl=None,  # Range: 0.003 - 0.03 IMPORTANT?? TODO
             verbose=1,
             n_epochs=10,  # Range: 3 - 30
-            batch_size=600,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
-            n_steps=200,  # Ragne: 512-5000
+            batch_size=500,  # num batch != num env!! to use train env, as eval env need to use 1 num env!
+            n_steps=500,  # Ragne: 512-5000
 
             # env_cfg=cfg, OLD PPO
             # eval_env=train_env, OLD PPO
@@ -215,7 +215,7 @@ def main():
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
     train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
-               log=5, easy=2, medium=20, total=70)
+               log=5, easy=2, medium=50, total=70)
 
     logging.info("Train ended!!!")
 

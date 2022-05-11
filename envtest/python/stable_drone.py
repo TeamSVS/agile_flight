@@ -71,11 +71,11 @@ def main():
         dummy_actions = np.random.rand(num_env, act_dim) * 2 - np.ones(shape=(num_env, act_dim))
 
         # A standard OpenAI gym style interface for reinforcement learning.
-        time.sleep(0.5)
-        dummy_actions[0][0] = -0.697  #-0.697
+        time.sleep(0.05)
+        dummy_actions[0][0] = -0.697 #-0.697
         dummy_actions[0][1] = 0 # ruota a destra
-        dummy_actions[0][2] = 0.5 # ruota avanti
-        dummy_actions[0][3] = 0  # su se stesso
+        dummy_actions[0][2] = 0.2 # ruota avanti
+        dummy_actions[0][3] = 0.0  # su se stesso
 
         obs, rew, done, info = env.step(dummy_actions)
         #print(env.getQuadState()[0][3:7])  # 0-1,5-6, 6-7
