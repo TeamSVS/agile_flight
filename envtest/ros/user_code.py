@@ -6,38 +6,26 @@ from utils import AgileCommandMode, AgileCommand
 from rl_example import rl_example
 
 
-def compute_command_vision_based(state, img):
-    ################################################
-    # !!! Begin of user code !!!
-    # TODO: populate the command message
-    ################################################
+def compute_command_vision_based(state, img, rl_model):
     print("Computing command vision-based!")
+    new_state = []
+    state_elem = [state.pos, state.att, state.vel, state.omega]
+    new_state.append(state.t)
+    for el in state_elem:
+        new_state.extend(el)
+
     # print(state)
     # print("Image shape: ", img.shape)
-
-    # Example of SRT command
-    command_mode = 0
-    command = AgileCommand(command_mode)
-    command.t = state.t
-    command.rotor_thrusts = [1.0, 1.0, 1.0, 1.0]
-
+    # state.t,state.pos,state.att,state.vel,state.omega
+    # rl_model.predict()
     # Example of CTBR command
+    # print(state.shape)
+    print(img.shape)
     command_mode = 1
     command = AgileCommand(command_mode)
     command.t = state.t
     command.collective_thrust = 15.0
     command.bodyrates = [0.0, 0.0, 0.0]
-
-    # Example of LINVEL command (velocity is expressed in world frame)
-    command_mode = 2
-    command = AgileCommand(command_mode)
-    command.t = state.t
-    command.velocity = [1.0, 0.0, 0.0]
-    command.yawrate = 0.0
-
-    ################################################
-    # !!! End of user code !!!
-    ################################################
 
     return command
 
@@ -56,7 +44,7 @@ def compute_command_state_based(state, obstacles, rl_policy=None):
     command = AgileCommand(command_mode)
     command.t = state.t
     command.rotor_thrusts = [1.0, 1.0, 1.0, 1.0]
- 
+
     # Example of CTBR command
     command_mode = 1
     command = AgileCommand(command_mode)
