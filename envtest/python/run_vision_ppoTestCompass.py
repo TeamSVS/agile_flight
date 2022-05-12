@@ -26,7 +26,7 @@ logging.basicConfig(level=logging.WARNING)
 ######################################
 
 
-ENVIRONMENT_CHANGE_THRESHOLD = 300
+ENVIRONMENT_CHANGE_THRESHOLD = 50000
 
 STARTING_LR = 0.001  # clip-length
 cfg = YAML().load(
@@ -101,7 +101,7 @@ def parser():
     parser.add_argument("--oport", type=int, default=10278, help="Output port for simulation")
     parser.add_argument("--nframe", type=int, default=3, help="Number of frame")
     parser.add_argument("--load", type=str, default=None, help="load and train an existing model.")
-    parser.add_argument("--mode", type=str, default="obs", help="the compass net input")  # depth,rgb,both
+    parser.add_argument("--mode", type=str, default="rgb", help="the compass net input")  # depth,rgb,both
     parser.add_argument("--gpu", type=int, default=None, help="the gpu used by torch")
     return parser
 
@@ -154,6 +154,10 @@ def main():
     ###############--SETUP PPO-MODEL--###############
     #################################################
 
+    number_feature = (256 + args.nframe * 13)
+    pi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
+    vi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
+
     if args.gpu is not None:
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = "{}".format(args.gpu)
@@ -164,9 +168,31 @@ def main():
                          print_system_info=True,
                          force_reset=True)
     else:
+        if args.mode != "obs":
+            kwargs = dict(
+                features_extractor_class=CompassModel,
+                features_extractor_kwargs=dict(mode=args.mode,
+                                               pretrained_encoder_path=os.environ["COMPASS_CKPT"],
+                                               feature_size=number_feature),
+                # features_extractor_class=SimpleCNNFE,
+                # features_extractor_kwargs=dict(
+                #        features_dim=256),
+                activation_fn=torch.nn.ReLU,
+                net_arch=[(256 + args.nframe * 13), dict(pi=pi_arch, vf=vi_arch)],
+                # Number hidden layer 1-3 TODO last layer?
+                log_std_init=-0.5,
+                normalize_images=False,
+                optimizer_kwargs=dict(weight_decay=0, betas=(0.9, 0.999), eps=1e-08, amsgrad=False),  # , maximize=False
+                # Adam optimizer TODO
+                optimizer_class=torch.optim.Adam
+            )
+        else:
+            kwargs = None
+
         model = PPO(
             tensorboard_log=log_dir,
             policy="MultiInputPolicy",
+            policy_kwargs=kwargs,
             env=train_env,
             gamma=0.99,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
             seed=args.seed,
@@ -193,7 +219,7 @@ def main():
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
     train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
-               log=5, easy=2, medium=20, total=50)
+               log=5, easy=0, medium=50, total=90)
 
     logging.info("Train ended!!!")
 
