@@ -114,7 +114,9 @@ def main():
     train_env = wrapper.FlightEnvVec(cfg, name="train", mode=args.mode, n_frames=args.nframe, in_port=args.iport,
                                      out_port=args.oport)
 
-    train_env.connectUnity()
+    if args.mode != "obs":
+        train_env.connectUnity()
+
     configure_random_seed(args.seed, train_env)
 
     ###############################################
