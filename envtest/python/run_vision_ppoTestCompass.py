@@ -101,7 +101,7 @@ def parser():
     parser.add_argument("--oport", type=int, default=10278, help="Output port for simulation")
     parser.add_argument("--nframe", type=int, default=3, help="Number of frame")
     parser.add_argument("--load", type=str, default=None, help="load and train an existing model.")
-    parser.add_argument("--mode", type=str, default="rgb", help="the compass net input")  # depth,rgb,both
+    parser.add_argument("--mode", type=str, default="obs", help="the compass net input")  # depth,rgb,both
     parser.add_argument("--gpu", type=int, default=None, help="the gpu used by torch")
     return parser
 
