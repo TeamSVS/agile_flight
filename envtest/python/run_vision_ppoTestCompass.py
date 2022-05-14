@@ -102,9 +102,9 @@ def parser():
     parser.add_argument("--nframe", type=int, default=3, help="Number of frame")
     parser.add_argument("--load", type=str, default=None, help="load and train an existing model.")
     parser.add_argument("--eval", type=bool, default=False, help="evaluate the model")
-    parser.add_argument("--mode", type=str, default="rgb", help="the compass net input")  # depth,rgb,both
+    parser.add_argument("--mode", type=str, default="depth", help="the compass net input")  # depth,rgb,both
     parser.add_argument("--gpu", type=int, default=None, help="the gpu used by torch")
-    parser.add_argument("--camera_dir", type=float, nargs='+', default=[0.0, 0.0, -90],
+    parser.add_argument("--camera_dir", type=float, nargs='+', default=[45.0, 0.0, -90],
                         help="Direction of the camera (roll, pitch, yaw)")
     parser.add_argument("--eval_episodes", type=int, default=50000, help="the eppisode to eval")
 
@@ -117,7 +117,7 @@ def main():
     ###############--LOAD CFG ENV 1--###############
     ################################################
     env = wrapper.FlightEnvVec(cfg, name="train", mode=args.mode, n_frames=args.nframe, in_port=args.iport,
-                               out_port=args.oport, camera_dir=args.camera_dir, evaluation=args.eval)
+                               out_port=args.oport)  # camera_dir=args.camera_dir, evaluation=args.eval
 
     if args.mode != "obs" or args.eval:
         env.connectUnity()
@@ -161,7 +161,7 @@ def main():
     ###############--SETUP PPO-MODEL--###############
     #################################################
 
-    number_feature = (256 + args.nframe * 13)
+    number_feature = (256 + 13)
     pi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
     vi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
     if args.gpu is not None:
