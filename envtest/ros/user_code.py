@@ -25,11 +25,13 @@ act_std = np.array([thrust_max / quad_mass / 2, \
 
 ###################### MODEL_VARIABLE ###################
 dict_state_key = "state"
-dict_image_key = "depth"
+dict_image_depth_key = "depth"
+dict_image_rgb_key = "rgb"
+dict_obs_key = "obs"
+
 is_defined = False
-model_ppo = None
 ###################### STACKED_VARIABLE ###################
-stacked_drone_state = []
+# stacked_drone_state = []
 stacked_depth_imgs = []
 stacked_rgb_imgs = []
 n_frames = 3
@@ -80,27 +82,29 @@ def load_state(state, buggy=False):
     return new_state
 
 
+# load_path = "/home/cam/Desktop/sim-ros2/icra22_competition_ws/src/agile_flight/envtest/python/saved/PPO_0301/best_model/best_model.zip"  # depth 3 frame
+load_path = "/home/cam/Desktop/sim-ros2/icra22_competition_ws/src/agile_flight/envtest/python/saved/PPO_0300/best_model/best_model.zip"  # OBS
+
+model_ppo = PPO.load(load_path, device="cuda:0", custom_objects=None,
+                     print_system_info=True,
+                     force_reset=True)
+
+
 def compute_command_vision_based(state, img):
-    global is_defined
     global model_ppo
-    global stacked_drone_state
+    #    global stacked_drone_state
     global stacked_depth_imgs
     global stacked_rgb_imgs
     ############ INIT_MODEL #########
-    print("Computing command vision-based!")
-    if not is_defined:
-        load_path = "/home/cam/Desktop/sim-ros2/icra22_competition_ws/src/agile_flight/envtest/python/saved/PPO_0267/model/ppo_model_200_steps.zip"
-        model_ppo = PPO.load(load_path, device="cuda:0", custom_objects=None,
-                             print_system_info=True,
-                             force_reset=True)
-        is_defined = True
+    print("Computing command VISION")
 
     ############ LOAD_STATE #########
 
-    stacked_drone_state = _stack_frames(stacked_drone_state, load_state(state))
-    stacked_new_state = np.array(stacked_drone_state)
+    # stacked_drone_state = _stack_frames(stacked_drone_state, load_state(state))
+    stacked_new_state = np.array(load_state(state))
+    stacked_new_state = np.expand_dims(stacked_new_state, 0)
     stacked_new_state = normalize_img_obs(stacked_new_state)
-    stacked_new_state = stacked_new_state.swapaxes(0, 1)
+    # stacked_new_state = stacked_new_state.swapaxes(0, 1)
 
     ############ LOAD_IMAGE #########
 
@@ -110,7 +114,7 @@ def compute_command_vision_based(state, img):
 
     obs = {
         dict_state_key: stacked_new_state,
-        dict_image_key: new_img
+        dict_image_depth_key: new_img
     }
 
     action, _ = model_ppo.predict(obs, deterministic=True)
@@ -127,30 +131,28 @@ def compute_command_vision_based(state, img):
 
 
 def compute_command_state_based(state, obstacles, rl_policy=None):
-    global is_defined
     global model_ppo
-    global stacked_drone_state
+    # global stacked_drone_state
     global stacked_depth_imgs
     global stacked_rgb_imgs
 
     ############ INIT_MODEL #########
-    print("Computing command vision-based!")
-    if not is_defined:
-        load_path = "/home/cam/Desktop/sim-ros2/icra22_competition_ws/src/agile_flight/envtest/python/saved/PPO_0267/model/ppo_model_200_steps.zip"
-        model_ppo = PPO.load(load_path, device="cuda:0", custom_objects=None,
-                             print_system_info=True,
-                             force_reset=True)
-        is_defined = True
-    print("Computing command based on obstacle information!")
+    print("Computing command STATE")
 
-    stacked_drone_state = _stack_frames(stacked_drone_state, load_state(state))
-    stacked_new_state = np.array(stacked_drone_state)
-    stacked_new_state = normalize_img_obs(stacked_new_state)
-    stacked_new_state = stacked_new_state.swapaxes(0, 1)
+    # stacked_drone_state = _stack_frames(stacked_drone_state, load_state(state))
+    stacked_new_state = np.array(load_state(state))
+    stacked_new_state = np.expand_dims(stacked_new_state, 0)
+
+    stacked_new_state = normalize_state_obs(stacked_new_state)
+    # stacked_new_state = stacked_new_state.swapaxes(0, 1)
+    new_obs = []
+    for x in obstacles.obstacles:
+        partial_vec1 = [x.position.x, x.position.y, x.position.z, x.scale]
+        new_obs.append(partial_vec1)
 
     obs = {
         dict_state_key: stacked_new_state,
-        dict_image_key: "new_img"
+        dict_obs_key: np.array(new_obs)
     }
 
     action, _ = model_ppo.predict(obs, deterministic=True)

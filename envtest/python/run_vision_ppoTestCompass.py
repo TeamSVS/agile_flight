@@ -155,7 +155,7 @@ def main():
     eval_callback = EvalCallback(env, best_model_save_path=best_dir,
                                  log_path=tensorboard_dir, eval_freq=int(ENVIRONMENT_CHANGE_THRESHOLD / 100),
                                  n_eval_episodes=10, deterministic=True)
-    checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
+    checkpoint_callback = CheckpointCallback(save_freq=110, save_path=model_dir,
                                              name_prefix='ppo_model')
     #################################################
     ###############--SETUP PPO-MODEL--###############
