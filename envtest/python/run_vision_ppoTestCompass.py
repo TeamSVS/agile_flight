@@ -19,6 +19,7 @@ from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
 from stable_baselines3.common.logger import configure, TensorBoardOutputFormat
+
 logging.basicConfig(level=logging.WARNING)
 
 ######################################
@@ -36,9 +37,6 @@ cfg = YAML().load(
 )
 
 actual_lr = STARTING_LR
-
-
-
 
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:
@@ -158,7 +156,7 @@ def main():
     eval_callback = EvalCallback(env, best_model_save_path=best_dir,
                                  log_path=tensorboard_dir, eval_freq=int(ENVIRONMENT_CHANGE_THRESHOLD / 100),
                                  n_eval_episodes=10, deterministic=True)
-    checkpoint_callback = CheckpointCallback(save_freq=110, save_path=model_dir,
+    checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
                                              name_prefix='ppo_model')
     #################################################
     ###############--SETUP PPO-MODEL--###############
@@ -190,7 +188,7 @@ def main():
                 # features_extractor_kwargs=dict(
                 #        features_dim=256),
                 activation_fn=torch.nn.Tanh,
-                net_arch=[ dict(pi=pi_arch, vf=vi_arch)],
+                net_arch=[dict(pi=pi_arch, vf=vi_arch)],
                 # Number hidden layer 1-3 TODO last layer?
                 log_std_init=-0.5,
                 normalize_images=False,
@@ -232,11 +230,12 @@ def main():
         )
         train_logger = configure(tensorboard_dir, ["tensorboard", "stdout"])
         tb_formatter = next(f for f in train_logger.output_formats if isinstance(f, TensorBoardOutputFormat))
-       # for key, value in vars(cfg).items():
+        # for key, value in vars(cfg).items():
         #    tb_formatter.writer.add_text("droneConfig/{}".format(key), str(value), 0)
         for typeObj in cfg:
             for Objparam in cfg[typeObj]:
-                tb_formatter.writer.add_text("droneConfig/{}".format(typeObj)+"/{}".format(Objparam), str(cfg[typeObj][Objparam]), 0)
+                tb_formatter.writer.add_text("droneConfig/{}".format(typeObj) + "/{}".format(Objparam),
+                                             str(cfg[typeObj][Objparam]), 0)
                 tb_formatter.writer.flush()
         model.set_logger(train_logger)
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
