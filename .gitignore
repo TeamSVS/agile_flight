@@ -39,3 +39,6 @@ dronenavigation/*
 !dronenavigation/models
 .idea2
 
+envtest/python/acados_ocp_nlp.json
+envtest/python/c_generated_code/
+
