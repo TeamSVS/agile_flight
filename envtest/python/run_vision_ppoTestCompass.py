@@ -202,7 +202,7 @@ def main():
             policy="MultiInputPolicy",
             policy_kwargs=kwargs,
 
-            env=train_env,
+            env=env,
             gamma=0.999,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
 
             seed=args.seed,
