@@ -1,0 +1,70 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+
+        {
+            "name": "quadrotor model node",
+            "type": "python",
+            "request": "launch",
+            "module": "src.mrs_gazebo.quadrotor_model_node",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "imu:=/uav1/mavros/imu/data",
+                "control_output:=/uav1/mavros/setpoint_raw/attitude"
+            ]
+        },
+        {
+            "name": "quadrotor model test",
+            "type": "python",
+            "request": "launch",
+            "module": "src.model_test.quadrotor_model_test",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "quadrotor model execution",
+            "type": "python",
+            "request": "launch",
+            "module": "src.model.quadrotor_model_execution",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "quadrotor model generation",
+            "type": "python",
+            "request": "launch",
+            "module": "src.model.quadrotor_model_generation",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "quadrotor model plot solution",
+            "type": "python",
+            "request": "launch",
+            "module": "src.model.quadrotor_solution_plot",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "flightmare step response",
+            "type": "python",
+            "request": "launch",
+            "module": "src.flightmare.flightmare_step_response",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+        {
+            "name": "flightmare back and forth",
+            "type": "python",
+            "request": "launch",
+            "module": "src.flightmare.flightmare_test",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+    ]
+}
