@@ -101,8 +101,13 @@ def parser():
     parser.add_argument("--oport", type=int, default=10278, help="Output port for simulation")
     parser.add_argument("--nframe", type=int, default=3, help="Number of frame")
     parser.add_argument("--load", type=str, default=None, help="load and train an existing model.")
-    parser.add_argument("--mode", type=str, default="rgb", help="the compass net input")  # depth,rgb,both
+    parser.add_argument("--eval", type=bool, default=False, help="evaluate the model")
+    parser.add_argument("--mode", type=str, default="depth", help="the compass net input")  # depth,rgb,both
     parser.add_argument("--gpu", type=int, default=None, help="the gpu used by torch")
+    parser.add_argument("--camera_dir", type=float, nargs='+', default=[45.0, 0.0, -90],
+                        help="Direction of the camera (roll, pitch, yaw)")
+    parser.add_argument("--eval_episodes", type=int, default=50000, help="the eppisode to eval")
+
     return parser
 
 
@@ -111,13 +116,13 @@ def main():
     ################################################
     ###############--LOAD CFG ENV 1--###############
     ################################################
-    train_env = wrapper.FlightEnvVec(cfg, name="train", mode=args.mode, n_frames=args.nframe, in_port=args.iport,
-                                     out_port=args.oport)
+    env = wrapper.FlightEnvVec(cfg, name="train", mode=args.mode, n_frames=args.nframe, in_port=args.iport,
+                               out_port=args.oport)  # camera_dir=args.camera_dir, evaluation=args.eval
 
-    if args.mode != "obs":
-        train_env.connectUnity()
+    if args.mode != "obs" or args.eval:
+        env.connectUnity()
 
-    configure_random_seed(args.seed, train_env)
+    configure_random_seed(args.seed, env)
 
     ###############################################
     ###############--SETUP FOLDERS--###############
@@ -147,28 +152,29 @@ def main():
     #################################################
 
     custom_callback = CustomCallback(trigg_freq=ENVIRONMENT_CHANGE_THRESHOLD)
-    eval_callback = EvalCallback(train_env, best_model_save_path=best_dir,
-                                 log_path=tensorboard_dir, eval_freq=int(ENVIRONMENT_CHANGE_THRESHOLD / 10),
+    eval_callback = EvalCallback(env, best_model_save_path=best_dir,
+                                 log_path=tensorboard_dir, eval_freq=int(ENVIRONMENT_CHANGE_THRESHOLD / 100),
                                  n_eval_episodes=10, deterministic=True)
-    checkpoint_callback = CheckpointCallback(save_freq=3000, save_path=model_dir,
+    checkpoint_callback = CheckpointCallback(save_freq=110, save_path=model_dir,
                                              name_prefix='ppo_model')
     #################################################
     ###############--SETUP PPO-MODEL--###############
     #################################################
 
-    number_feature = (256 + args.nframe * 13)
+    number_feature = (256 + 13)
     pi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
     vi_arch = [number_feature, int(number_feature / 2), int(number_feature / 4)]
-
     if args.gpu is not None:
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = "{}".format(args.gpu)
 
     if args.load is not None:
-        load_path = semipath + "/PPO_" + args.load + "/best_model/best_model.zip"
-        model = PPO.load(load_path, env=train_env, device=("cuda:{0}".format(args.gpu)), custom_objects=None,
+        load_path = semipath + "/PPO_" + args.load + "/best_model/best_model"
+        model = PPO.load(load_path, env=env, device=("cuda:{0}".format(args.gpu)), custom_objects=None,
                          print_system_info=True,
                          force_reset=True)
+
+
     else:
         if args.mode != "obs":
             kwargs = dict(
@@ -195,8 +201,10 @@ def main():
             tensorboard_log=log_dir,
             policy="MultiInputPolicy",
             policy_kwargs=kwargs,
+
             env=train_env,
             gamma=0.999,  # Discout factor old 0.99 IMPORTANT 0.8,0.9997-0.99
+
             seed=args.seed,
             ent_coef=0.002,  # Range:  0 - 0.01
             vf_coef=0.75,  # OLD 0.5 Range 0.5-1
@@ -218,12 +226,22 @@ def main():
             # gae_lambda=0.95,
 
         )
+
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
-    train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
-               log=5, easy=0, medium=50, total=90)
+    if not args.eval:
+        train_loop(model, callback=[custom_callback, eval_callback, checkpoint_callback],
+                   log=5, easy=0, medium=50, total=90)
+    else:
 
-    logging.info("Train ended!!!")
+        completed_episodes = 0
+        obs = env.reset()
+        while completed_episodes < args.eval_episodes:
+            action, _ = model.predict(obs, deterministic=True)
+            obs, rewards, dones, info = env.step(action)
+            completed_episodes += sum(dones)
+
+    logging.info("ENDED!!!")
 
 
 if __name__ == "__main__":

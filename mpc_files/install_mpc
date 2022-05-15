@@ -1,0 +1,20 @@
+#!/bin/bash
+cd components
+git clone https://github.com/acados/acados.git
+cd acados
+export ACADOS_SOURCE_DIR="$PWD"
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$ACADOS_SOURCE_DIR/lib"
+
+
+git submodule update --recursive --init
+cmake -B build -DACADOS_WITH_QPOASES=ON -DCMAKE_BUILD_TYPE=Release
+cmake install -j10
+
+pip install -e interfaces/acados_template
+
+cd ..
+git clone git@bitbucket.org:fudavandiggelen/payloadmpc.git mpc
+cd mpc
+python -m src.model.quadrotor_model_generation
+
+

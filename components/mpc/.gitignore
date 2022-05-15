@@ -1,0 +1,6 @@
+/c_generated_code
+/.vscode/settings.json
+/acados_ocp_nlp.json
+/*.pdf
+/*.png
+/**/__pycache__
