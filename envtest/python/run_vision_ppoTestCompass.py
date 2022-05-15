@@ -18,7 +18,7 @@ import sys
 from customCallback import CustomCallback
 from dronenavigation.models.compass.compass_model import CompassModel
 from flightmare.flightpy.flightrl.rpg_baselines.torch.envs import vec_env_wrapper as wrapper
-
+from stable_baselines3.common.logger import configure, TensorBoardOutputFormat
 logging.basicConfig(level=logging.WARNING)
 
 ######################################
@@ -36,6 +36,9 @@ cfg = YAML().load(
 )
 
 actual_lr = STARTING_LR
+
+
+
 
 
 def linear_schedule(initial_value: float) -> Callable[[float], float]:
@@ -176,6 +179,7 @@ def main():
 
 
     else:
+
         if args.mode != "obs":
             kwargs = dict(
                 features_extractor_class=CompassModel,
@@ -226,7 +230,15 @@ def main():
             # gae_lambda=0.95,
 
         )
-
+        train_logger = configure(tensorboard_dir, ["tensorboard", "stdout"])
+        tb_formatter = next(f for f in train_logger.output_formats if isinstance(f, TensorBoardOutputFormat))
+       # for key, value in vars(cfg).items():
+        #    tb_formatter.writer.add_text("droneConfig/{}".format(key), str(value), 0)
+        for typeObj in cfg:
+            for Objparam in cfg[typeObj]:
+                tb_formatter.writer.add_text("droneConfig/{}".format(typeObj)+"/{}".format(Objparam), str(cfg[typeObj][Objparam]), 0)
+                tb_formatter.writer.flush()
+        model.set_logger(train_logger)
     # model.learn(total_timesteps=int(5 * 1e7), log_interval=5,
     #             callback=[custom_callback, eval_callback, checkpoint_callback])
     if not args.eval:
